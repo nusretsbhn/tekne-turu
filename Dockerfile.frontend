@@ -3,36 +3,27 @@
 
 FROM node:20-alpine AS build
 WORKDIR /app
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 
 # Desk (root /)
-COPY src/frontend/desk/package*.json ./desk/
-RUN cd desk && npm ci
 COPY src/frontend/desk ./desk/
-RUN cd desk && npm run build
+RUN cd desk && npm install && npm run build
 
 # Admin (/admin)
-COPY src/frontend/admin/package*.json ./admin/
-RUN cd admin && npm ci
 COPY src/frontend/admin ./admin/
-RUN cd admin && npm run build
+RUN cd admin && npm install && npm run build
 
 # Check-in (/checkin)
-COPY src/frontend/checkin/package*.json ./checkin/
-RUN cd checkin && npm ci
 COPY src/frontend/checkin ./checkin/
-RUN cd checkin && npm run build
+RUN cd checkin && npm install && npm run build
 
 # Desk Acenta (/acenta)
-COPY src/frontend/desk-acenta/package*.json ./acenta/
-RUN cd acenta && npm ci
 COPY src/frontend/desk-acenta ./acenta/
-RUN cd acenta && npm run build
+RUN cd acenta && npm install && npm run build
 
 # Landing (/landing, /thanks)
-COPY src/frontend/landing/package*.json ./landing/
-RUN cd landing && npm ci
 COPY src/frontend/landing ./landing/
-RUN cd landing && npm run build
+RUN cd landing && npm install && npm run build
 
 # Nginx
 FROM nginx:alpine
