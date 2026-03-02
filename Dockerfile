@@ -10,9 +10,9 @@ COPY src/TekneTuru.Core/TekneTuru.Core.csproj src/TekneTuru.Core/
 COPY src/TekneTuru.API/TekneTuru.API.csproj src/TekneTuru.API/
 RUN dotnet restore src/TekneTuru.API/TekneTuru.API.csproj
 
-# Copy the rest and publish
+# Copy the rest and publish (publish runs restore internally)
 COPY . .
-RUN dotnet publish src/TekneTuru.API/TekneTuru.API.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish src/TekneTuru.API/TekneTuru.API.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
