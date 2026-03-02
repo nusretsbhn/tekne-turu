@@ -1,0 +1,101 @@
+import type { PersonForm } from '../types'
+import { validatePerson } from '../validation'
+import type { AgeCategory, Nationality } from '../types'
+
+const styles = {
+  card: { marginBottom: 12, border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' as const },
+  header: { padding: '12px 16px', background: '#f5f5f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' },
+  body: { padding: 16, background: '#fff' },
+  row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 },
+  full: { marginBottom: 12 },
+  label: { display: 'block', marginBottom: 4, fontWeight: 500, fontSize: 14 },
+  labelEn: { fontSize: 12, color: '#888', fontWeight: 400 },
+  required: { color: '#c00', marginLeft: 2 },
+  input: { width: '100%', padding: '8px 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 16 },
+  checkRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 },
+  btnRemove: { padding: '6px 12px', background: '#c00', color: '#fff', border: 0, borderRadius: 6, cursor: 'pointer', fontSize: 14 },
+}
+
+interface PersonCardProps {
+  person: PersonForm
+  index: number
+  canRemove: boolean
+  expanded: boolean
+  onToggle: () => void
+  onChange: (updates: Partial<PersonForm>) => void
+  onRemove: () => void
+}
+
+export function PersonCard({ person, index, canRemove, expanded, onToggle, onChange, onRemove }: PersonCardProps) {
+  const err = validatePerson(person)
+  const label = person.fullName?.trim() ? `Kişi ${index + 1} – ${person.fullName.trim()}${err ? '' : ' ✓'}` : `Kişi ${index + 1}`
+
+  return (
+    <div style={styles.card}>
+      <div style={styles.header} onClick={onToggle} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onToggle()}>
+        <span style={{ fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 18 }}>{expanded ? '▼' : '▶'}</span>
+      </div>
+      {expanded && (
+        <div style={styles.body} onClick={(e) => e.stopPropagation()}>
+          <div style={styles.row}>
+            <div style={styles.full}>
+              <label style={styles.label}>Ad Soyad <span style={styles.labelEn}>/ Full Name</span> <span style={styles.required}>*</span></label>
+              <input style={styles.input} value={person.fullName} onChange={(e) => onChange({ fullName: e.target.value })} placeholder="En az 3 karakter" required />
+            </div>
+          </div>
+          <div style={styles.row}>
+            <div>
+              <label style={styles.label}>Uyruk <span style={styles.labelEn}>/ Nationality</span> <span style={styles.required}>*</span></label>
+              <select style={styles.input} value={person.nationality} onChange={(e) => onChange({ nationality: e.target.value as Nationality })}>
+                <option value="TR">Türkiye (TC)</option>
+                <option value="Diğer">Diğer (Pasaport)</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>{person.nationality === 'TR' ? 'TC Kimlik No' : 'Pasaport No'} <span style={styles.labelEn}>/ {person.nationality === 'TR' ? 'Turkish ID No.' : 'Passport No.'}</span> <span style={styles.required}>*</span></label>
+              <input style={styles.input} value={person.idNumber} onChange={(e) => onChange({ idNumber: e.target.value })} placeholder={person.nationality === 'TR' ? '11 haneli' : 'Pasaport no'} required />
+            </div>
+          </div>
+          <div style={styles.row}>
+            <div>
+              <label style={styles.label}>Doğum Tarihi <span style={styles.labelEn}>/ Birth Date</span> <span style={styles.required}>*</span></label>
+              <input type="date" style={styles.input} value={person.birthDate} onChange={(e) => onChange({ birthDate: e.target.value })} required />
+            </div>
+            <div>
+              <label style={styles.label}>Yaş Kategorisi <span style={styles.labelEn}>/ Age Category</span> <span style={styles.required}>*</span></label>
+              <select style={styles.input} value={person.ageCategory} onChange={(e) => onChange({ ageCategory: e.target.value as AgeCategory })}>
+                <option value="Yetişkin">Yetişkin</option>
+                <option value="Çocuk">Çocuk (2-12)</option>
+                <option value="Bebek">Bebek (0-2)</option>
+              </select>
+            </div>
+          </div>
+          <div style={styles.row}>
+            <div>
+              <label style={styles.label}>Telefon <span style={styles.labelEn}>/ Phone</span> <span style={styles.required}>*</span></label>
+              <input type="tel" style={styles.input} value={person.phone} onChange={(e) => onChange({ phone: e.target.value })} placeholder="5xx xxx xx xx" required />
+            </div>
+            <div>
+              <label style={styles.label}>E-posta <span style={styles.labelEn}>/ Email</span> <span style={styles.required}>*</span></label>
+              <input type="email" style={styles.input} value={person.email} onChange={(e) => onChange({ email: e.target.value })} required />
+            </div>
+          </div>
+          <div style={styles.full}>
+            <label style={styles.label}>Konaklama Yeri <span style={styles.labelEn}>/ Accommodation</span></label>
+            <input style={styles.input} value={person.accommodationPlace} onChange={(e) => onChange({ accommodationPlace: e.target.value })} placeholder="Otel adı vb." />
+          </div>
+          <div style={styles.checkRow}>
+            <input type="checkbox" id={`kvkk-${person.id}`} checked={person.kvkkConsent} onChange={(e) => onChange({ kvkkConsent: e.target.checked })} required />
+            <label htmlFor={`kvkk-${person.id}`}>KVKK aydınlatma metnini okudum, kabul ediyorum. <span style={styles.labelEn}>/ I accept the KVKK.</span> <span style={styles.required}>*</span></label>
+          </div>
+          <div style={styles.checkRow}>
+            <input type="checkbox" id={`sms-${person.id}`} checked={person.smsConsent} onChange={(e) => onChange({ smsConsent: e.target.checked })} required />
+            <label htmlFor={`sms-${person.id}`}>Pazarlama ve bilgilendirme SMS’leri almak istiyorum. <span style={styles.labelEn}>/ I agree to receive SMS.</span> <span style={styles.required}>*</span></label>
+          </div>
+          {canRemove && <button type="button" style={styles.btnRemove} onClick={onRemove}>Kişiyi Kaldır</button>}
+        </div>
+      )}
+    </div>
+  )
+}

@@ -1,0 +1,20 @@
+{
+  "comment": "Her alan için xPercent ve yPercent (0-100). Şablon genişliği ve yüksekliğine göre yüzde. Örn: xPercent 25 = metnin sol kenarı görsel genişliğinin %25'inde.",
+  "fontSizePercent": 2.8,
+  "fields": {
+    "biletNo":      { "xPercent": 63, "yPercent": 29 },
+    "fullName":     { "xPercent": 3,  "yPercent": 32 },
+    "phone":        { "xPercent": 42,  "yPercent": 55 },
+    "hotel":        { "xPercent": 3, "yPercent": 55 },
+    "servis":       { "xPercent": 23, "yPercent": 54 },
+    "paymentType":  { "xPercent": 57, "yPercent": 55 },
+    "tourStart":    { "xPercent": 3,  "yPercent": 71 },
+    "tourEnd":      { "xPercent": 23, "yPercent": 71 },
+    "tourDate":     { "xPercent": 3, "yPercent": 88 },
+    "note":         { "xPercent": 23, "yPercent": 88 },
+    "adultCount":   { "xPercent":46, "yPercent": 85 },
+    "childCount":   { "xPercent": 57, "yPercent": 85 },
+    "babyCount":    { "xPercent": 68, "yPercent": 85 },
+    "status":       { "xPercent": 33, "yPercent": 93 }
+  }
+}

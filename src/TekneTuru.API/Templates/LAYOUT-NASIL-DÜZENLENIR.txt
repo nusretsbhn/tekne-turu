@@ -1,0 +1,26 @@
+BİLET YAZI KONUMLARI - ticket-layout.json NASIL DÜZENLENİR
+============================================================
+
+1) bilet.jpg şablonunu bir görüntü programında açın (Örn: macOS Önizleme, GIMP, Paint).
+2) Görselin boyutunu öğrenin (örn. 1200 x 600 piksel).
+3) Her alan için "değerin başlaması gereken noktayı" (sol üst köşe) düşünün.
+   Örn: "Ad Soyad" yazısı, şablonda "Otel Adı" etiketinin solundaki boşluğa yazılacaksa,
+   o boşluğun sol üst köşesinin piksel koordinatını (x, y) not edin.
+
+4) Yüzdeye çevirin:
+   xPercent = (x / görsel genişliği) * 100
+   yPercent = (y / görsel yüksekliği) * 100
+
+   Örnek: Görsel 1200x600, Ad Soyad (80, 144) pikselde olsun:
+   fullName: xPercent = 80/1200*100 ≈ 6.67  → 7
+             yPercent = 144/600*100 = 24    → 24
+
+5) src/TekneTuru.API/Templates/ticket-layout.json dosyasını açın.
+6) "fields" içinde ilgili alanın "xPercent" ve "yPercent" değerlerini girin.
+7) API'yi yeniden başlatıp yeni bir bilet kesin; konumlar güncellenmiş olacaktır.
+
+Alan adları: biletNo, fullName, phone, hotel, servis, paymentType, tourStart, tourEnd,
+             tourDate, note, adultCount, childCount, babyCount, status
+
+fontSizePercent: Metin boyutu (görsel yüksekliğinin yüzdesi). 2.5–3.5 arası uygundur.
+saklandığı

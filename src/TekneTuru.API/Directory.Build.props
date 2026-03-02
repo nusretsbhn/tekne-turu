@@ -1,0 +1,6 @@
+<Project>
+  <!-- Ara çıktıyı proje dışına (/tmp) alarak IDE/antivirüs kilitlerinden (CS2012) kaçınır. -->
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>/tmp/TekneTuru.API-build/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,7 @@
+<Project>
+  <!-- Props, Microsoft.Common.props'tan önce yüklendiği için burada ayarlanmalı (MSB3539 önlenir). -->
+  <!-- Ara çıktıyı proje dışına (/tmp) alarak IDE/antivirüs kilitlerinden (CS2012) kaçınır. -->
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>/tmp/TekneTuru.Core-build/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>
