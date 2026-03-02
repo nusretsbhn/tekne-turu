@@ -31,8 +31,9 @@ export function Settings() {
   useEffect(() => {
     if (!token) return
     fetchSettings(token).then((s) => {
-      setValues(s ?? {})
-      setThanksDesc(s?.ThanksPageDescription ?? '')
+      const raw = s ?? {}
+      setValues(Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v ?? ''])) as Record<string, string>)
+      setThanksDesc(raw?.ThanksPageDescription ?? '')
     }).finally(() => setLoading(false))
   }, [token])
 

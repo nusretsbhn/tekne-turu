@@ -20,10 +20,11 @@ export function MarketingSettings() {
     if (!token) return
     fetchSettings(token)
       .then((s) => {
-        setValues(s ?? {})
-        const raw = (s?.MarketingGalleryJson as string | null) ?? '[]'
+        const raw = s ?? {}
+        setValues(Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v ?? ''])) as Record<string, string>)
+        const galleryJson = (raw?.MarketingGalleryJson as string | null) ?? '[]'
         try {
-          const parsed = JSON.parse(raw) as GalleryItem[]
+          const parsed = JSON.parse(galleryJson) as GalleryItem[]
           setGallery(Array.isArray(parsed) ? parsed : [])
         } catch {
           setGallery([])
