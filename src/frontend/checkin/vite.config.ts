@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  base: process.env.NODE_ENV === 'production' ? '/checkin/' : '/',
   plugins: [
     react(),
     VitePWA({
@@ -12,7 +13,7 @@ export default defineConfig({
         name: 'Tekne Turu Check-in',
         short_name: 'Check-in',
         description: 'Tekne turu yolcu check-in ekranı',
-        start_url: '/',
+        start_url: '/checkin/',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#1a1a1a',

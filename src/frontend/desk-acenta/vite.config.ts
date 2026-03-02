@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  base: process.env.NODE_ENV === 'production' ? '/acenta/' : '/',
   plugins: [
     react(),
     VitePWA({
@@ -12,7 +13,7 @@ export default defineConfig({
         name: 'Tekne Turu Acenta Kayıt',
         short_name: 'Acenta Kayıt',
         description: 'Tekne turu acenta müşteri kayıt ekranı',
-        start_url: '/',
+        start_url: '/acenta/',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#1a1a1a',

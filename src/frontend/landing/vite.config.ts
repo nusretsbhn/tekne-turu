@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  base: process.env.NODE_ENV === 'production' ? '/landing/' : '/',
   plugins: [
     react(),
     VitePWA({
@@ -12,7 +13,7 @@ export default defineConfig({
         name: 'Tekne Turu',
         short_name: 'Tur',
         description: 'Tekne turu bilgi sayfası',
-        start_url: '/',
+        start_url: '/landing/',
         display: 'standalone',
         background_color: '#f8f8f8',
         theme_color: '#1a1a2e',

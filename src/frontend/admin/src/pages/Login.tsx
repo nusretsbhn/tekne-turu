@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
-const CHECKIN_URL = import.meta.env.VITE_CHECKIN_URL ?? 'http://localhost:5175'
+const CHECKIN_URL = import.meta.env.VITE_CHECKIN_URL ?? (typeof window !== 'undefined' ? `${window.location.origin}/checkin/` : '/checkin/')
 
 export function Login() {
   const navigate = useNavigate()

@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  base: process.env.NODE_ENV === 'production' ? '/admin/' : '/',
   plugins: [
     react(),
     VitePWA({
@@ -12,7 +13,7 @@ export default defineConfig({
         name: 'Tekne Turu Yönetim – Admin',
         short_name: 'Admin',
         description: 'Tekne turu admin paneli',
-        start_url: '/',
+        start_url: '/admin/',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#1a1a1a',
