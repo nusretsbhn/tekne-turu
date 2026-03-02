@@ -38,13 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
-      const data = await res.json()
+      const text = await res.text()
+      const data = text ? (JSON.parse(text) as { accessToken?: string; role?: string; fullName?: string; error?: string }) : {}
       if (!res.ok) {
         return { ok: false, error: data?.error ?? 'Giriş başarısız.' }
       }
-      const accessToken = data.accessToken
+      const accessToken = data.accessToken ?? ''
       const role = data.role ?? ''
-      const userInfo: UserInfo = { fullName: data.fullName, role }
+      const userInfo: UserInfo = { fullName: data.fullName ?? '', role }
       localStorage.setItem(TOKEN_KEY, accessToken)
       localStorage.setItem(USER_KEY, JSON.stringify(userInfo))
       setToken(accessToken)

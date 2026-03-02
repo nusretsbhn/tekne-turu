@@ -356,7 +356,7 @@ app.MapPost("/api/auth/login", async (LoginRequest req, AuthService auth, Cancel
         return Results.BadRequest(new { error = "E-posta ve şifre gerekli." });
     var result = await auth.LoginAsync(req.Email, req.Password, ct);
     if (result == null)
-        return Results.Unauthorized();
+        return Results.Json(new { error = "E-posta veya şifre hatalı." }, statusCode: 401);
     return Results.Ok(result);
 });
 
