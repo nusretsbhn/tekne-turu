@@ -333,6 +333,29 @@ if (app.Environment.IsDevelopment() && !string.IsNullOrEmpty(conn))
     ");
 }
 
+// Admin seed: Production'da da varsayılan admin yoksa oluştur
+try
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (!await db.Users.AnyAsync())
+    {
+        db.Users.Add(new User
+        {
+            FullName = "Admin",
+            Email = "nusretblog@gmail.com",
+            PasswordHash = AuthService.HashPassword("Sene69.."),
+            Role = "Admin",
+            IsActive = true
+        });
+        await db.SaveChangesAsync();
+    }
+}
+catch (Exception)
+{
+    // DB bağlantısı veya tablo yoksa atla
+}
+
 app.UseCors();
 app.UseStaticFiles();
 if (!app.Environment.IsDevelopment())
