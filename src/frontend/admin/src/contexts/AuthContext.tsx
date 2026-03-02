@@ -51,7 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userInfo)
       return { ok: true, role }
     } catch (e) {
-      return { ok: false, error: 'Bağlantı hatası.' }
+      const msg = e instanceof Error ? e.message : 'Bağlantı hatası.'
+      return { ok: false, error: `Bağlantı hatası: ${msg}` }
     }
   }, [])
 
