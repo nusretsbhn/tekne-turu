@@ -1,0 +1,13 @@
+.git
+.gitignore
+.DS_Store
+
+**/bin
+**/obj
+
+**/node_modules
+**/dist
+**/.vite
+
+src/TekneTuru.API/wwwroot/uploads
+src/TekneTuru.API/wwwroot/tickets
