@@ -103,19 +103,42 @@ public class AdminService
         var customerIds = list.Select(c => c.Id).ToList();
         var dateFromVal = dateFrom ?? DateOnly.MinValue;
         var dateToVal = dateTo ?? DateOnly.MaxValue;
-        var agencyByCustomer = await _db.DailyBookings
+
+        var bookingsInRange = await _db.DailyBookings
             .AsNoTracking()
             .Where(b => customerIds.Contains(b.CustomerId) && b.TourDate >= dateFromVal && b.TourDate <= dateToVal)
             .OrderBy(b => b.Id)
-            .Select(b => new { b.CustomerId, b.AgencyName })
+            .Select(b => new { b.CustomerId, b.AgencyName, b.TourDate })
             .ToListAsync(ct);
-        var firstAgencyByCustomer = agencyByCustomer
+
+        var firstAgencyByCustomer = bookingsInRange
             .GroupBy(x => x.CustomerId)
             .ToDictionary(g => g.Key, g => g.First().AgencyName);
 
-        return list.Select(c => new CustomerListItemDto(
-            c.Id, c.FullName, c.IdNumber, c.Phone, c.Email, c.Nationality, c.KvkkConsent, c.SmsConsent, c.CreatedAt,
-            firstAgencyByCustomer.GetValueOrDefault(c.Id))).ToList();
+        var firstTourDateByCustomer = bookingsInRange
+            .GroupBy(x => x.CustomerId)
+            .ToDictionary(g => g.Key, g => g.Min(b => b.TourDate));
+
+        return list.Select(c =>
+        {
+            // Kayıt tarihi olarak, filtre aralığındaki ilk tur tarihini baz al;
+            // yoksa müşteri oluşturulma tarihine geri dön.
+            var created = firstTourDateByCustomer.TryGetValue(c.Id, out var td)
+                ? td.ToDateTime(TimeOnly.MinValue)
+                : c.CreatedAt;
+
+            return new CustomerListItemDto(
+                c.Id,
+                c.FullName,
+                c.IdNumber,
+                c.Phone,
+                c.Email,
+                c.Nationality,
+                c.KvkkConsent,
+                c.SmsConsent,
+                created,
+                firstAgencyByCustomer.GetValueOrDefault(c.Id));
+        }).ToList();
     }
 
     public async Task<List<CoastGuardRowDto>> GetCoastGuardListAsync(DateOnly date, int maxCount, CancellationToken ct = default)
