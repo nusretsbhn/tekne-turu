@@ -1367,7 +1367,10 @@ app.MapGet("/t/{shortCode}", async (string shortCode, HttpContext httpContext, S
     }
 
     var token = await landing.CreateTokenForBookingAsync(bookingId.Value, ct);
-    var landingBase = (await db.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == "LandingBaseUrl", ct))?.Value?.TrimEnd('/') ?? "http://localhost:3000";
+    var landingBase = (await db.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == "LandingBaseUrl", ct))?.Value?.Trim().TrimEnd('/') ?? "http://localhost:3000/landing";
+    // /landing veya /landing/ değerlerinden bağımsız olarak her zaman /landing/ şeklinde kullan
+    if (landingBase.EndsWith("/landing", StringComparison.OrdinalIgnoreCase))
+        landingBase += "/";
     var redirectUrl = string.IsNullOrEmpty(token) ? landingBase : $"{landingBase}?token={token}";
     return Results.Redirect(redirectUrl);
 }).AllowAnonymous();
