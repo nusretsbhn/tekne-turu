@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TekneTuru.API.Data;
@@ -66,6 +67,7 @@ builder.Services.AddScoped<TicketService>();
 builder.Services.AddHostedService<TourEndSmsBackgroundService>();
 builder.Services.AddHostedService<IysRetryBackgroundService>();
 builder.Services.AddHealthChecks();
+builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = 52_428_800); // 50 MB
 
 var app = builder.Build();
 
@@ -1079,21 +1081,29 @@ stopsGroup.MapPost("/reorder", async (ReorderStopsRequest body, AppDbContext db,
 var uploadGroup = app.MapGroup("/api/upload").RequireAuthorization();
 uploadGroup.MapPost("/", async (HttpRequest request, CancellationToken ct) =>
 {
-    if (!request.HasFormContentType)
-        return Results.BadRequest(new { error = "Form verisi gerekli." });
-    var form = await request.ReadFormAsync(ct);
-    var file = form.Files.GetFile("file");
-    if (file == null || file.Length == 0)
-        return Results.BadRequest(new { error = "Dosya seçiniz." });
-    var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-    if (string.IsNullOrEmpty(ext)) ext = ".bin";
-    var name = $"{Guid.NewGuid():N}{ext}";
-    var uploadsDir = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads");
-    Directory.CreateDirectory(uploadsDir);
-    var path = Path.Combine(uploadsDir, name);
-    await using (var stream = File.Create(path))
-        await file.CopyToAsync(stream, ct);
-    return Results.Ok(new { url = $"/uploads/{name}" });
+    try
+    {
+        if (!request.HasFormContentType)
+            return Results.Json(new { error = "Form verisi gerekli." }, statusCode: 400);
+        var form = await request.ReadFormAsync(ct);
+        var file = form.Files.GetFile("file");
+        if (file == null || file.Length == 0)
+            return Results.Json(new { error = "Dosya seçiniz." }, statusCode: 400);
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (string.IsNullOrEmpty(ext)) ext = ".bin";
+        var name = $"{Guid.NewGuid():N}{ext}";
+        var uploadsDir = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads");
+        Directory.CreateDirectory(uploadsDir);
+        var path = Path.Combine(uploadsDir, name);
+        await using (var stream = File.Create(path))
+            await file.CopyToAsync(stream, ct);
+        return Results.Ok(new { url = $"/uploads/{name}" });
+    }
+    catch (Exception ex)
+    {
+        var msg = ex.InnerException?.Message ?? ex.Message;
+        return Results.Json(new { error = "Yükleme hatası: " + msg }, statusCode: 500);
+    }
 }).DisableAntiforgery();
 
 var settingsGroup = app.MapGroup("/api/settings").RequireAuthorization();

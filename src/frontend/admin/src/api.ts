@@ -208,11 +208,18 @@ export async function uploadFile(token: string, file: File): Promise<{ url: stri
     headers: { Authorization: `Bearer ${token}` },
     body: form,
   })
+  const text = await res.text()
   if (!res.ok) {
-    const data = await res.json().catch(() => ({})) as { error?: string }
-    throw new Error(data?.error ?? `Yükleme başarısız (${res.status})`)
+    let msg = `Yükleme başarısız (${res.status})`
+    if (text) {
+      try {
+        const data = JSON.parse(text) as { error?: string }
+        if (data?.error) msg = data.error
+      } catch { /* ignore */ }
+    } else if (res.status === 413) msg = 'Dosya çok büyük. En fazla 50 MB yükleyebilirsiniz.'
+    throw new Error(msg)
   }
-  return res.json()
+  return text ? (JSON.parse(text) as { url: string }) : { url: '' }
 }
 
 export type SmsTemplateItem = { id: number; templateKey: string; contentTR: string | null; contentEN: string | null; isActive: boolean; updatedAt: string }
