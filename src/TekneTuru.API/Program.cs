@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TekneTuru.API.Data;
@@ -360,7 +361,16 @@ catch (Exception)
 }
 
 app.UseCors();
+
+// wwwroot ve uploads klasörünü static dosya olarak sun
 app.UseStaticFiles();
+var uploadsRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads");
+Directory.CreateDirectory(uploadsRoot);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsRoot),
+    RequestPath = "/uploads"
+});
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 app.UseAuthentication();
