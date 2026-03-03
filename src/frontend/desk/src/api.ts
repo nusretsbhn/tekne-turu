@@ -1,8 +1,12 @@
 import type { PersonForm } from './types'
 
-export async function createBooking(persons: PersonForm[], agencyName?: string | null): Promise<{ success: boolean; error?: string }> {
+export async function createBooking(
+  persons: PersonForm[],
+  tourDate: string,
+  agencyName?: string | null,
+): Promise<{ success: boolean; error?: string }> {
   const body = {
-    tourDate: null as Date | null,
+    tourDate: tourDate || null,
     persons: persons.map((p) => ({
       fullName: p.fullName.trim(),
       idNumber: p.idNumber.trim(),

@@ -21,6 +21,7 @@ const styles = {
 export default function App() {
   const [screen, setScreen] = useState<Screen>('start')
   const [persons, setPersons] = useState<PersonForm[]>([])
+  const [tourDate, setTourDate] = useState<string>(() => new Date().toISOString().slice(0, 10))
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -30,6 +31,7 @@ export default function App() {
     setPersons([emptyPerson()])
     setExpandedId(null)
     setError('')
+    setTourDate(new Date().toISOString().slice(0, 10))
     setScreen('form')
   }, [])
 
@@ -60,10 +62,10 @@ export default function App() {
   }, [screen, countdown])
 
   const submit = useCallback(async () => {
-    if (!allPersonsValid(persons)) return
+    if (!allPersonsValid(persons) || !tourDate) return
     setError('')
     setLoading(true)
-    const result = await createBooking(persons)
+    const result = await createBooking(persons, tourDate)
     setLoading(false)
     if (result.success) {
       setScreen('thankyou')
@@ -100,6 +102,17 @@ export default function App() {
   return (
     <div style={styles.wrap}>
       <h1 style={{ marginBottom: 8 }}>Grup Kaydı</h1>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ display: 'block', marginBottom: 4, fontWeight: 600 }}>
+          Tur Tarihi <span style={{ fontSize: 12, color: '#666', fontWeight: 400 }}>/ Tour Date</span>
+        </label>
+        <input
+          type="date"
+          value={tourDate}
+          onChange={(e) => setTourDate(e.target.value)}
+          style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid #ccc', fontSize: 14 }}
+        />
+      </div>
       <div style={styles.formHeader}>
         <button type="button" style={styles.addBtn} onClick={addPerson}>
           + Kişi Ekle

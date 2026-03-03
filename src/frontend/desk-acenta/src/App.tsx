@@ -26,6 +26,7 @@ export default function App() {
   const [persons, setPersons] = useState<PersonForm[]>([])
   const [agencyName, setAgencyName] = useState('')
   const [agencyLocked, setAgencyLocked] = useState(false)
+  const [tourDate, setTourDate] = useState<string>(() => new Date().toISOString().slice(0, 10))
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -47,6 +48,7 @@ export default function App() {
     setPersons([emptyPerson()])
     setExpandedId(null)
     setError('')
+    setTourDate(new Date().toISOString().slice(0, 10))
     setScreen('form')
   }, [])
 
@@ -77,10 +79,10 @@ export default function App() {
   }, [screen, countdown])
 
   const submit = useCallback(async () => {
-    if (!allPersonsValid(persons)) return
+    if (!allPersonsValid(persons) || !tourDate) return
     setError('')
     setLoading(true)
-    const result = await createBooking(persons, agencyName.trim() || null)
+    const result = await createBooking(persons, tourDate, agencyName.trim() || null)
     setLoading(false)
     if (result.success) {
       setScreen('thankyou')
@@ -117,6 +119,17 @@ export default function App() {
   return (
     <div style={styles.wrap}>
       <h1 style={{ marginBottom: 8 }}>Acenta Grup Kaydı</h1>
+      <div style={{ marginBottom: 12 }}>
+        <label style={styles.agencyLabel}>
+          Tur Tarihi <span style={{ fontSize: 12, color: '#888', fontWeight: 400 }}>/ Tour Date</span>
+        </label>
+        <input
+          type="date"
+          value={tourDate}
+          onChange={(e) => setTourDate(e.target.value)}
+          style={styles.agencyInput}
+        />
+      </div>
       <div style={styles.agencyWrap}>
         <label style={styles.agencyLabel}>Acenta Adı <span style={{ fontSize: 12, color: '#888', fontWeight: 400 }}>/ Agency Name</span> <span style={{ color: '#c00', marginLeft: 2 }}>*</span></label>
         <input
