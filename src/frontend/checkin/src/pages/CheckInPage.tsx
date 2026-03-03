@@ -11,7 +11,7 @@ function todayStr() {
 
 export function CheckInPage() {
   const { token, user, logout } = useAuth()
-  const [tourDate, setTourDate] = useState(todayStr)
+  const [tourDate] = useState(todayStr)
   const [search, setSearch] = useState('')
   const [list, setList] = useState<BookingListItem[]>([])
   const [summary, setSummary] = useState<BookingSummary | null>(null)
@@ -96,10 +96,10 @@ export function CheckInPage() {
       </header>
 
       <div style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-        <label>
+        <span>
           Tarih:{' '}
-          <input type="date" value={tourDate} onChange={(e) => setTourDate(e.target.value)} style={{ padding: '6px 10px' }} />
-        </label>
+          <strong>{new Date(tourDate).toLocaleDateString('tr-TR')}</strong>
+        </span>
         <input
           type="text"
           placeholder="Ad soyad veya TC/Pasaport ara..."

@@ -417,9 +417,10 @@ app.MapPost("/api/bookings", async (CreateBookingRequest? req, BookingService bo
 });
 
 var bookingGroup = app.MapGroup("/api/bookings").RequireAuthorization();
-bookingGroup.MapGet("/", async (DateOnly? tourDate, string? search, BookingService booking, CancellationToken ct) =>
+bookingGroup.MapGet("/", async (DateOnly? tourDate, string? search, HttpContext httpContext, BookingService booking, CancellationToken ct) =>
 {
-    var date = tourDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+    // Check-in ekranı için güvenli: her zaman bugünün tur tarihini listele
+    var date = DateOnly.FromDateTime(DateTime.UtcNow);
     var (list, summary) = await booking.GetBookingsForDateAsync(date, search, ct);
     return Results.Ok(new { list, summary });
 });
