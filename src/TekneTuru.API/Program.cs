@@ -69,7 +69,8 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment() && !string.IsNullOrEmpty(conn))
+// Veritabanı şemasını hem Development hem Production'da oluştur/güncelle
+if (!string.IsNullOrEmpty(conn))
 {
     try
     {
