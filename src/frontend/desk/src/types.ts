@@ -9,7 +9,6 @@ export interface PersonForm {
   birthDate: string
   ageCategory: AgeCategory
   phone: string
-  email: string
   accommodationPlace: string
   kvkkConsent: boolean
   smsConsent: boolean
@@ -23,7 +22,6 @@ export const emptyPerson = (): PersonForm => ({
   birthDate: '',
   ageCategory: 'Yetişkin',
   phone: '',
-  email: '',
   accommodationPlace: '',
   kvkkConsent: false,
   smsConsent: false,

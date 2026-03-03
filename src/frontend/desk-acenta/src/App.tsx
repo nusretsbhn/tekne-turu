@@ -53,7 +53,12 @@ export default function App() {
   }, [])
 
   const addPerson = useCallback(() => {
-    setPersons((p) => [...p, emptyPerson()])
+    setPersons((prev) => {
+      const next = [...prev, emptyPerson()]
+      const last = next[next.length - 1]
+      setExpandedId(last.id)
+      return next
+    })
   }, [])
 
   const updatePerson = useCallback((id: string, updates: Partial<PersonForm>) => {
@@ -80,6 +85,13 @@ export default function App() {
 
   const submit = useCallback(async () => {
     if (!allPersonsValid(persons) || !tourDate) return
+    const count = persons.length
+    const dateTr = new Date(tourDate).toLocaleDateString('tr-TR')
+    const dateEn = new Date(tourDate).toLocaleDateString('en-GB')
+    const confirmText =
+      `Viking Ölüdeniz Tekne Turuna ${dateTr} tarihli ${count} kişilik kayıt yapılacak. Onaylıyor musunuz?\n\n` +
+      `This will create a booking for ${count} guest(s) on ${dateEn} for the Viking Oludeniz boat tour. Do you confirm?`
+    if (!window.confirm(confirmText)) return
     setError('')
     setLoading(true)
     const result = await createBooking(persons, tourDate, agencyName.trim() || null)
@@ -90,12 +102,12 @@ export default function App() {
     } else {
       setError(result.error ?? 'Kayıt gönderilemedi.')
     }
-  }, [persons, agencyName])
+  }, [persons, agencyName, tourDate])
 
   if (screen === 'start') {
     return (
       <div style={styles.wrap}>
-        <h1 style={{ textAlign: 'center', marginTop: 48 }}>Tekne Turu – Acenta Kayıt</h1>
+        <h1 style={{ textAlign: 'center', marginTop: 48 }}>Viking Ölüdeniz Acenta Yolcu Kayıt Sistemi</h1>
         <button type="button" style={styles.startBtn} onClick={startNew}>
           Yeni Grup Kaydı Başlat
         </button>
@@ -118,18 +130,7 @@ export default function App() {
 
   return (
     <div style={styles.wrap}>
-      <h1 style={{ marginBottom: 8 }}>Acenta Grup Kaydı</h1>
-      <div style={{ marginBottom: 12 }}>
-        <label style={styles.agencyLabel}>
-          Tur Tarihi <span style={{ fontSize: 12, color: '#888', fontWeight: 400 }}>/ Tour Date</span>
-        </label>
-        <input
-          type="date"
-          value={tourDate}
-          onChange={(e) => setTourDate(e.target.value)}
-          style={styles.agencyInput}
-        />
-      </div>
+      <h1 style={{ marginBottom: 8 }}>Viking Ölüdeniz Acenta Yolcu Kayıt Sistemi</h1>
       <div style={styles.agencyWrap}>
         <label style={styles.agencyLabel}>Acenta Adı <span style={{ fontSize: 12, color: '#888', fontWeight: 400 }}>/ Agency Name</span> <span style={{ color: '#c00', marginLeft: 2 }}>*</span></label>
         <input
@@ -141,14 +142,6 @@ export default function App() {
           readOnly={agencyLocked}
         />
         {agencyLocked && <span style={{ fontSize: 12, color: '#666', marginLeft: 8 }}>(Link ile açıldı, değiştirilemez)</span>}
-      </div>
-      <div style={styles.formHeader}>
-        <button type="button" style={styles.addBtn} onClick={addPerson}>
-          + Kişi Ekle
-        </button>
-        <button type="button" style={{ ...styles.submitBtn, ...(valid && agencyName.trim() && !loading ? {} : styles.submitBtnDisabled) }} onClick={submit} disabled={!valid || !agencyName.trim() || loading}>
-          {loading ? 'Kaydediliyor...' : 'Grubu Kaydet'}
-        </button>
       </div>
       {(!valid || !agencyName.trim()) && persons.length > 0 && <p style={styles.error}>Zorunlu alanları doldurunuz. / Please fill in required fields.</p>}
       {error && <p style={styles.error}>{error}</p>}
@@ -162,8 +155,23 @@ export default function App() {
           onToggle={() => setExpandedId(expandedId === p.id ? null : p.id)}
           onChange={(updates) => updatePerson(p.id, updates)}
           onRemove={() => removePerson(p.id)}
+          tourDate={tourDate}
+          onTourDateChange={setTourDate}
         />
       ))}
+      <div style={{ ...styles.formHeader, marginTop: 16 }}>
+        <button type="button" style={styles.addBtn} onClick={addPerson}>
+          + Kişi Ekle
+        </button>
+        <button
+          type="button"
+          style={{ ...styles.submitBtn, ...(valid && agencyName.trim() && !loading ? {} : styles.submitBtnDisabled) }}
+          onClick={submit}
+          disabled={!valid || !agencyName.trim() || loading}
+        >
+          {loading ? 'Kaydediliyor...' : 'Grubu Kaydet'}
+        </button>
+      </div>
     </div>
   )
 }

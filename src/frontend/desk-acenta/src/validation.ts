@@ -10,13 +10,21 @@ export function validatePerson(p: PersonForm): string | null {
     if (!p.idNumber?.trim()) return 'Pasaport numarası giriniz.'
   }
   if (!p.birthDate) return 'Doğum tarihi seçiniz.'
-  const birth = new Date(p.birthDate)
+  const birth = parseBirthDate(p.birthDate)
   if (birth > new Date()) return 'Doğum tarihi geçmiş bir tarih olmalıdır.'
   if (!p.ageCategory) return 'Yaş kategorisi seçiniz.'
   if (!p.phone?.trim()) return 'Telefon giriniz.'
-  if (!p.email?.trim()) return 'E-posta giriniz.'
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim())) return 'Geçerli bir e-posta giriniz.'
   return null
+}
+
+function parseBirthDate(value: string): Date {
+  const v = value.trim()
+  if (!v) return new Date('')
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(v)) {
+    const [d, m, y] = v.split('.').map((x) => parseInt(x, 10))
+    return new Date(y, m - 1, d)
+  }
+  return new Date(v)
 }
 
 export function isPersonValid(p: PersonForm): boolean {

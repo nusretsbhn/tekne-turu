@@ -6,7 +6,7 @@ const styles = {
   card: { marginBottom: 12, border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' as const },
   header: { padding: '12px 16px', background: '#f5f5f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' },
   body: { padding: 16, background: '#fff' },
-  row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 },
+  row: { display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginBottom: 12 },
   full: { marginBottom: 12 },
   label: { display: 'block', marginBottom: 4, fontWeight: 500, fontSize: 14 },
   labelEn: { fontSize: 12, color: '#888', fontWeight: 400 },
@@ -24,9 +24,11 @@ interface PersonCardProps {
   onToggle: () => void
   onChange: (updates: Partial<PersonForm>) => void
   onRemove: () => void
+  tourDate: string
+  onTourDateChange: (value: string) => void
 }
 
-export function PersonCard({ person, index, canRemove, expanded, onToggle, onChange, onRemove }: PersonCardProps) {
+export function PersonCard({ person, index, canRemove, expanded, onToggle, onChange, onRemove, tourDate, onTourDateChange }: PersonCardProps) {
   const err = validatePerson(person)
   const label = person.fullName?.trim() ? `Kişi ${index + 1} – ${person.fullName.trim()}${err ? '' : ' ✓'}` : `Kişi ${index + 1}`
 
@@ -38,6 +40,18 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
       </div>
       {expanded && (
         <div style={styles.body} onClick={(e) => e.stopPropagation()}>
+          <div style={styles.full}>
+            <label style={styles.label}>
+              Tur Tarihi <span style={styles.labelEn}>/ Tour Date</span> <span style={styles.required}>*</span>
+            </label>
+            <input
+              type="date"
+              style={styles.input}
+              value={tourDate}
+              onChange={(e) => onTourDateChange(e.target.value)}
+              required
+            />
+          </div>
           <div style={styles.row}>
             <div style={styles.full}>
               <label style={styles.label}>Ad Soyad <span style={styles.labelEn}>/ Full Name</span> <span style={styles.required}>*</span></label>
@@ -71,15 +85,9 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
               </select>
             </div>
           </div>
-          <div style={styles.row}>
-            <div>
-              <label style={styles.label}>Telefon <span style={styles.labelEn}>/ Phone</span> <span style={styles.required}>*</span></label>
-              <input type="tel" style={styles.input} value={person.phone} onChange={(e) => onChange({ phone: e.target.value })} placeholder="5xx xxx xx xx" required />
-            </div>
-            <div>
-              <label style={styles.label}>E-posta <span style={styles.labelEn}>/ Email</span> <span style={styles.required}>*</span></label>
-              <input type="email" style={styles.input} value={person.email} onChange={(e) => onChange({ email: e.target.value })} required />
-            </div>
+          <div style={styles.full}>
+            <label style={styles.label}>Telefon <span style={styles.labelEn}>/ Phone</span> <span style={styles.required}>*</span></label>
+            <input type="tel" style={styles.input} value={person.phone} onChange={(e) => onChange({ phone: e.target.value })} placeholder="5xx xxx xx xx" required />
           </div>
           <div style={styles.full}>
             <label style={styles.label}>Konaklama Yeri <span style={styles.labelEn}>/ Accommodation</span></label>

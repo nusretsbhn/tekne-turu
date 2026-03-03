@@ -11,10 +11,10 @@ export async function createBooking(
       fullName: p.fullName.trim(),
       idNumber: p.idNumber.trim(),
       nationality: p.nationality,
-      birthDate: p.birthDate ? new Date(p.birthDate).toISOString().slice(0, 10) : null,
+      birthDate: normalizeDate(p.birthDate),
       ageCategory: p.ageCategory,
       phone: p.phone?.trim() || null,
-      email: p.email?.trim() || null,
+      email: null,
       accommodationPlace: p.accommodationPlace?.trim() || null,
       kvkkConsent: p.kvkkConsent,
       smsConsent: p.smsConsent,
@@ -53,4 +53,16 @@ export async function createBooking(
     const msg = e instanceof Error ? e.message : 'Sunucuya ulaşılamadı.'
     return { success: false, error: `Sunucuya ulaşılamadı. API çalışıyor mu? (localhost:5244) — ${msg}` }
   }
+}
+
+function normalizeDate(value: string | null | undefined): string | null {
+  if (!value) return null
+  const v = value.trim()
+  if (!v) return null
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(v)) {
+    const [d, m, y] = v.split('.')
+    return `${y}-${m}-${d}`
+  }
+  // Tarayıcıdan gelen yyyy-MM-dd formatını aynen kullan
+  return v.slice(0, 10)
 }
