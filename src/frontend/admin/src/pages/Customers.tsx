@@ -23,8 +23,9 @@ const emptyForm = (): CustomerDetail & { accommodationPlace?: string | null } =>
 
 export function Customers() {
   const { token } = useAuth()
+  const today = todayStr()
   const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState(todayStr())
+  const [dateTo, setDateTo] = useState(today)
   const [search, setSearch] = useState('')
   const [agencyFilter, setAgencyFilter] = useState('')
   const [list, setList] = useState<CustomerListItem[]>([])
@@ -43,7 +44,19 @@ export function Customers() {
     if (!token) return
     setLoading(true)
     setError('')
-    fetchCustomers(token, { dateFrom: dateFrom || undefined, dateTo: dateTo || undefined, search: search || undefined, agency: agencyFilter?.trim() || undefined, limit: 200 })
+    const trimmedSearch = search.trim()
+    const hasCustomDate = !!dateFrom || dateTo !== today
+    const useDateFilter = hasCustomDate || !trimmedSearch
+    const dateFromParam = useDateFilter ? (dateFrom || undefined) : undefined
+    const dateToParam = useDateFilter ? (dateTo || undefined) : undefined
+
+    fetchCustomers(token, {
+      dateFrom: dateFromParam,
+      dateTo: dateToParam,
+      search: trimmedSearch || undefined,
+      agency: agencyFilter?.trim() || undefined,
+      limit: 200,
+    })
       .then(setList)
       .catch((err: Error) => setError(err?.message ?? 'Liste alınamadı.'))
       .finally(() => setLoading(false))
