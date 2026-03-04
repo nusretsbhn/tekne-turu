@@ -22,4 +22,11 @@
     <SignAppHost>false</SignAppHost>
   </PropertyGroup>
 
+  <!-- Bilet şablonu ve layout dosyalarını publish çıktısına kopyala -->
+  <ItemGroup>
+    <Content Include="Templates\**\*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
