@@ -2,7 +2,15 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { fetchSettings, updateSettings, fetchDocuments, updateDocument, uploadFile, type DocumentItem } from '../api'
 
-const KEYS = ['InstagramUrl', 'GoogleReviewsUrl', 'TripAdvisorUrl', 'LandingBaseUrl', 'ThanksPageUrl', 'ShortLinkBaseUrl'] as const
+const KEYS = [
+  'InstagramUrl',
+  'GoogleReviewsUrl',
+  'TripAdvisorUrl',
+  'LandingBaseUrl',
+  'ThanksPageUrl',
+  'ShortLinkBaseUrl',
+  'DeskAcentaBaseUrl',
+] as const
 const THANKS_DESC_KEY = 'ThanksPageDescription'
 
 const DOC_ENTRIES = [
