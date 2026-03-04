@@ -7,7 +7,9 @@ export function Acentalar() {
   const [list, setList] = useState<AgencyItem[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [baseUrl, setBaseUrl] = useState('http://localhost:5176')
+  const [baseUrl, setBaseUrl] = useState(
+    import.meta.env.PROD ? '/acenta/' : 'http://localhost:5176',
+  )
 
   useEffect(() => {
     if (!token) return

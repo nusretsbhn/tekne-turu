@@ -13,7 +13,9 @@ export function AcentaKaydi() {
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState('')
   const [createdLink, setCreatedLink] = useState<string | null>(null)
-  const [baseUrl, setBaseUrl] = useState('http://localhost:5176')
+  const [baseUrl, setBaseUrl] = useState(
+    import.meta.env.PROD ? '/acenta/' : 'http://localhost:5176',
+  )
 
   useEffect(() => {
     if (!token) return
