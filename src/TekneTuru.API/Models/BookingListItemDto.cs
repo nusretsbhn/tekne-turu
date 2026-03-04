@@ -5,6 +5,7 @@ public record BookingListItemDto(
     int CustomerId,
     string FullName,
     string IdNumber,
+    string? Phone,
     DateTime? BirthDate,
     string AgeCategory,
     bool CheckedIn,

@@ -176,6 +176,7 @@ public class BookingService
                 b.CustomerId,
                 b.Customer!.FullName ?? "",
                 b.Customer.IdNumber ?? "",
+                b.Customer.Phone,
                 b.Customer.BirthDate,
                 b.AgeCategory,
                 b.CheckedIn,

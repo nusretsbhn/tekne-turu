@@ -8,6 +8,7 @@ export type BookingListItem = {
   customerId: number
   fullName: string
   idNumber: string
+  phone: string | null
   birthDate: string | null
   ageCategory: string
   checkedIn: boolean

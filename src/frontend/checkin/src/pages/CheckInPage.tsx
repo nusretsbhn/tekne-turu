@@ -9,9 +9,17 @@ function todayStr() {
   return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0')
 }
 
+/** Son 5 haneyi yıldızla maskele (çalışan tam TC/telefon görmesin) */
+function maskLast5(value: string | null | undefined): string {
+  if (value == null || value === '') return '—'
+  const s = String(value).trim()
+  if (s.length <= 5) return '*****'
+  return s.slice(0, -5) + '*****'
+}
+
 export function CheckInPage() {
   const { token, user, logout } = useAuth()
-  const [tourDate] = useState(todayStr)
+  const [tourDate, setTourDate] = useState(todayStr)
   const [search, setSearch] = useState('')
   const [list, setList] = useState<BookingListItem[]>([])
   const [summary, setSummary] = useState<BookingSummary | null>(null)
@@ -96,9 +104,14 @@ export function CheckInPage() {
       </header>
 
       <div style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-        <span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           Tarih:{' '}
-          <strong>{new Date(tourDate).toLocaleDateString('tr-TR')}</strong>
+          <input
+            type="date"
+            value={tourDate}
+            onChange={(e) => setTourDate(e.target.value)}
+            style={{ padding: '6px 8px' }}
+          />
         </span>
         <input
           type="text"
@@ -148,6 +161,7 @@ export function CheckInPage() {
             <th style={{ padding: 10, textAlign: 'left', width: 40 }}></th>
             <th style={{ padding: 10, textAlign: 'left' }}>Ad Soyad</th>
             <th style={{ padding: 10, textAlign: 'left' }}>TC / Pasaport</th>
+            <th style={{ padding: 10, textAlign: 'left' }}>Telefon</th>
             <th style={{ padding: 10, textAlign: 'left' }}>Kategori</th>
             <th style={{ padding: 10, textAlign: 'left', width: 120 }}>Durum</th>
           </tr>
@@ -187,7 +201,8 @@ function Row({
         <input type="checkbox" checked={selected} onChange={onToggleSelect} />
       </td>
       <td style={{ padding: 10 }}>{item.fullName}</td>
-      <td style={{ padding: 10 }}>{item.idNumber}</td>
+      <td style={{ padding: 10 }}>{maskLast5(item.idNumber)}</td>
+      <td style={{ padding: 10 }}>{maskLast5(item.phone)}</td>
       <td style={{ padding: 10 }}>{item.ageCategory}</td>
       <td style={{ padding: 10 }}>
         <button type="button" onClick={onToggleCheckIn} disabled={actionLoading} style={{ padding: '6px 12px', background: checkedIn ? '#c00' : '#0a0', color: '#fff', border: 0, borderRadius: 6 }}>
