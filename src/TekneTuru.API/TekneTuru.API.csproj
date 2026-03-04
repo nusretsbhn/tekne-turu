@@ -23,9 +23,12 @@
   </PropertyGroup>
 
   <!-- Bilet şablonu ve layout dosyalarını publish çıktısına kopyala.
-       Templates klasörü zaten Content olarak ekli; bu yüzden Include yerine Update kullanıyoruz. -->
+       ticket-layout.json zaten Content olarak ekli; bilet.jpg için Include, layout için Update kullanıyoruz. -->
   <ItemGroup>
-    <Content Update="Templates\**\*">
+    <Content Include="Templates\bilet.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Templates\ticket-layout.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
