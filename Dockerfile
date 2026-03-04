@@ -16,6 +16,13 @@ RUN dotnet publish src/TekneTuru.API/TekneTuru.API.csproj -c Release -o /app/pub
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
+
+# ImageSharp ile metin yazdırmak için Linux container'a temel fontları ekle
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    fontconfig \
+    fonts-dejavu-core \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/publish ./
 
 EXPOSE 5244
