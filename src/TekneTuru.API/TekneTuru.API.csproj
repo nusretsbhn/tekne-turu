@@ -22,9 +22,10 @@
     <SignAppHost>false</SignAppHost>
   </PropertyGroup>
 
-  <!-- Bilet şablonu ve layout dosyalarını publish çıktısına kopyala -->
+  <!-- Bilet şablonu ve layout dosyalarını publish çıktısına kopyala.
+       Templates klasörü zaten Content olarak ekli; bu yüzden Include yerine Update kullanıyoruz. -->
   <ItemGroup>
-    <Content Include="Templates\**\*">
+    <Content Update="Templates\**\*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
