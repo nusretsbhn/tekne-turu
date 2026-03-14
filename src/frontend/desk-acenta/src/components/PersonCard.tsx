@@ -107,35 +107,35 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
                   return (
                     <>
                       <input
-                        type="number"
-                        min={1}
-                        max={31}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={2}
                         placeholder="Gün"
                         style={{ ...styles.input, width: 64 }}
                         value={parts.day}
-                        onChange={(e) => onChange({ birthDate: combineBirthDateParts(e.target.value, parts.month, parts.year) })}
+                        onChange={(e) => onChange({ birthDate: combineBirthDateParts(e.target.value.replace(/\D/g, ''), parts.month, parts.year) })}
                         required
                         aria-label="Doğum günü"
                       />
                       <input
-                        type="number"
-                        min={1}
-                        max={12}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={2}
                         placeholder="Ay"
                         style={{ ...styles.input, width: 64 }}
                         value={parts.month}
-                        onChange={(e) => onChange({ birthDate: combineBirthDateParts(parts.day, e.target.value, parts.year) })}
+                        onChange={(e) => onChange({ birthDate: combineBirthDateParts(parts.day, e.target.value.replace(/\D/g, ''), parts.year) })}
                         required
                         aria-label="Doğum ayı"
                       />
                       <input
-                        type="number"
-                        min={1900}
-                        max={2100}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={4}
                         placeholder="Yıl"
                         style={{ ...styles.input, width: 80 }}
                         value={parts.year}
-                        onChange={(e) => onChange({ birthDate: combineBirthDateParts(parts.day, parts.month, e.target.value) })}
+                        onChange={(e) => onChange({ birthDate: combineBirthDateParts(parts.day, parts.month, e.target.value.replace(/\D/g, '')) })}
                         required
                         aria-label="Doğum yılı"
                       />
