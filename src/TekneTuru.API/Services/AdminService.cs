@@ -187,7 +187,7 @@ public class AdminService
             .ToListAsync(ct);
 
         var groups = bookings
-            .GroupBy(b => new { b.ServicePickupTime ?? "", b.AgencyName ?? "" })
+            .GroupBy(b => new { PickupTime = b.ServicePickupTime ?? "", AgencyName = b.AgencyName ?? "" })
             .Select(g =>
             {
                 var first = g.First();
