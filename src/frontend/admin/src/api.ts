@@ -37,6 +37,20 @@ export async function fetchDashboard(token: string, date?: string): Promise<Dash
   return res.json()
 }
 
+export type ServiceListItem = {
+  fullName: string
+  phone: string | null
+  hotel: string | null
+  personCount: number
+  pickupTime: string | null
+}
+
+export async function fetchServiceList(token: string, date?: string): Promise<ServiceListItem[]> {
+  const d = date ?? todayStr()
+  const res = await apiGet(token, `/api/admin/dashboard/service-list?date=${d}`)
+  return res.json()
+}
+
 export type CustomerListItem = {
   id: number
   fullName: string

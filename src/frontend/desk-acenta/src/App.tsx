@@ -26,6 +26,8 @@ export default function App() {
   const [persons, setPersons] = useState<PersonForm[]>([])
   const [agencyName, setAgencyName] = useState('')
   const [agencyLocked, setAgencyLocked] = useState(false)
+  const [useShuttle, setUseShuttle] = useState(false)
+  const [servicePickupTime, setServicePickupTime] = useState('')
   const [tourDate, setTourDate] = useState<string>(() => new Date().toISOString().slice(0, 10))
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -94,7 +96,7 @@ export default function App() {
     if (!window.confirm(confirmText)) return
     setError('')
     setLoading(true)
-    const result = await createBooking(persons, tourDate, agencyName.trim() || null)
+    const result = await createBooking(persons, tourDate, agencyName.trim() || null, useShuttle, servicePickupTime.trim() || null)
     setLoading(false)
     if (result.success) {
       setScreen('thankyou')
@@ -102,7 +104,7 @@ export default function App() {
     } else {
       setError(result.error ?? 'Kayıt gönderilemedi.')
     }
-  }, [persons, agencyName, tourDate])
+  }, [persons, agencyName, tourDate, useShuttle, servicePickupTime])
 
   if (screen === 'start') {
     return (
@@ -142,6 +144,28 @@ export default function App() {
           readOnly={agencyLocked}
         />
         {agencyLocked && <span style={{ fontSize: 12, color: '#666', marginLeft: 8 }}>(Link ile açıldı, değiştirilemez)</span>}
+      </div>
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 8 }}>
+          <input
+            type="checkbox"
+            checked={useShuttle}
+            onChange={(e) => setUseShuttle(e.target.checked)}
+          />
+          <span style={{ fontWeight: 500 }}>Servis <span style={{ fontSize: 12, color: '#888', fontWeight: 400 }}>/ Transfer</span></span>
+        </label>
+        {useShuttle && (
+          <div style={{ marginLeft: 24, marginTop: 6 }}>
+            <label style={{ display: 'block', marginBottom: 4, fontWeight: 500, fontSize: 14 }}>Alınış saati <span style={{ fontSize: 12, color: '#888', fontWeight: 400 }}>/ Pickup time</span></label>
+            <input
+              type="text"
+              placeholder="Örn: 09:00"
+              value={servicePickupTime}
+              onChange={(e) => setServicePickupTime(e.target.value)}
+              style={{ ...styles.agencyInput, maxWidth: 120 }}
+            />
+          </div>
+        )}
       </div>
       {(!valid || !agencyName.trim()) && persons.length > 0 && <p style={styles.error}>Zorunlu alanları doldurunuz. / Please fill in required fields.</p>}
       {error && <p style={styles.error}>{error}</p>}

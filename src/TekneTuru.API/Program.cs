@@ -111,6 +111,12 @@ if (!string.IsNullOrEmpty(conn))
             IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'DailyBookings' AND column_name = 'AgencyName') THEN
                 ALTER TABLE ""DailyBookings"" ADD COLUMN ""AgencyName"" VARCHAR(256) NULL;
             END IF;
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'DailyBookings' AND column_name = 'UseShuttle') THEN
+                ALTER TABLE ""DailyBookings"" ADD COLUMN ""UseShuttle"" BOOLEAN NOT NULL DEFAULT FALSE;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'DailyBookings' AND column_name = 'ServicePickupTime') THEN
+                ALTER TABLE ""DailyBookings"" ADD COLUMN ""ServicePickupTime"" VARCHAR(32) NULL;
+            END IF;
             IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'PreReservations') THEN
                 CREATE TABLE ""PreReservations"" (
                     ""Id"" SERIAL PRIMARY KEY,
@@ -404,7 +410,7 @@ app.MapPost("/api/bookings", async (CreateBookingRequest? req, BookingService bo
         return Results.BadRequest(new { error = "En az bir kişi bilgisi gönderilmelidir." });
     try
     {
-        var (success, error, ids) = await booking.CreateBookingAsync(req.TourDate, req.Persons, req.AgencyName, ct);
+        var (success, error, ids) = await booking.CreateBookingAsync(req.TourDate, req.Persons, req.AgencyName, req.UseShuttle ?? false, req.ServicePickupTime, ct);
         if (!success)
             return Results.BadRequest(new { error = error ?? "Kayıt işlemi başarısız." });
         return Results.Ok(new { success = true, bookingIds = ids });
@@ -444,6 +450,16 @@ adminGroup.MapGet("/dashboard", async (DateOnly? date, AdminService admin, Cance
         var d = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var stats = await admin.GetDashboardStatsAsync(d, ct);
         return Results.Ok(stats);
+    }
+    catch (Exception ex) { return Results.Json(new { error = ex.Message }, statusCode: 500); }
+});
+adminGroup.MapGet("/dashboard/service-list", async (DateOnly? date, AdminService admin, CancellationToken ct) =>
+{
+    try
+    {
+        var d = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var list = await admin.GetServiceListAsync(d, ct);
+        return Results.Ok(list);
     }
     catch (Exception ex) { return Results.Json(new { error = ex.Message }, statusCode: 500); }
 });

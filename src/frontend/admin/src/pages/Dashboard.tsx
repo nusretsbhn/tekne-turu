@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { fetchDashboard, type DashboardStats } from '../api'
+import { fetchDashboard, fetchServiceList, type DashboardStats, type ServiceListItem } from '../api'
 
 function todayStr() {
   const t = new Date()
@@ -11,6 +11,8 @@ export function Dashboard() {
   const { token } = useAuth()
   const [date, setDate] = useState(todayStr)
   const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [serviceListDate, setServiceListDate] = useState(todayStr)
+  const [serviceList, setServiceList] = useState<ServiceListItem[]>([])
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -18,6 +20,11 @@ export function Dashboard() {
     setError('')
     fetchDashboard(token, date).then(setStats).catch(() => setError('Veriler alınamadı.'))
   }, [token, date])
+
+  useEffect(() => {
+    if (!token) return
+    fetchServiceList(token, serviceListDate).then(setServiceList).catch(() => setServiceList([]))
+  }, [token, serviceListDate])
 
   const isToday = date === todayStr()
   useEffect(() => {
@@ -89,27 +96,67 @@ export function Dashboard() {
             {(stats.todayCustomers ?? []).length === 0 && <p style={{ color: 'var(--color-text-muted)', marginTop: 8 }}>Bu tarihte kayıt yok.</p>}
           </div>
 
-          <div>
-            <h2 style={{ fontSize: '1.125rem', marginBottom: '0.75rem' }}>Son 7 gün</h2>
-            <div className="table-wrap" style={{ maxWidth: 400 }}>
-              <table style={{ minWidth: 0 }}>
-                <thead>
-                  <tr>
-                    <th>Tarih</th>
-                    <th style={{ textAlign: 'right' }}>Kayıt</th>
-                    <th style={{ textAlign: 'right' }}>Binen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.last7Days.map((d) => (
-                    <tr key={d.date}>
-                      <td>{new Date(d.date).toLocaleDateString('tr-TR')}</td>
-                      <td style={{ textAlign: 'right' }}>{d.total}</td>
-                      <td style={{ textAlign: 'right' }}>{d.checkedIn}</td>
+          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <div>
+              <h2 style={{ fontSize: '1.125rem', marginBottom: '0.75rem' }}>Son 7 gün</h2>
+              <div className="table-wrap" style={{ maxWidth: 400 }}>
+                <table style={{ minWidth: 0 }}>
+                  <thead>
+                    <tr>
+                      <th>Tarih</th>
+                      <th style={{ textAlign: 'right' }}>Kayıt</th>
+                      <th style={{ textAlign: 'right' }}>Binen</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {stats.last7Days.map((d) => (
+                      <tr key={d.date}>
+                        <td>{new Date(d.date).toLocaleDateString('tr-TR')}</td>
+                        <td style={{ textAlign: 'right' }}>{d.total}</td>
+                        <td style={{ textAlign: 'right' }}>{d.checkedIn}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.125rem', marginBottom: '0.75rem' }}>Servis listesi</h2>
+              <div className="form-group" style={{ marginBottom: 8 }}>
+                <label htmlFor="service-list-date">Tarih</label>
+                <input
+                  id="service-list-date"
+                  type="date"
+                  value={serviceListDate}
+                  onChange={(e) => setServiceListDate(e.target.value)}
+                  style={{ width: 'auto', minWidth: 140 }}
+                />
+              </div>
+              <div className="table-wrap" style={{ maxWidth: 520 }}>
+                <table style={{ minWidth: 0 }}>
+                  <thead>
+                    <tr>
+                      <th>Ad Soyad</th>
+                      <th>Telefon</th>
+                      <th>Otel</th>
+                      <th style={{ textAlign: 'right' }}>Kişi</th>
+                      <th>Alınış Saati</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {serviceList.map((row, i) => (
+                      <tr key={i}>
+                        <td>{row.fullName}</td>
+                        <td>{row.phone ?? '—'}</td>
+                        <td>{row.hotel ?? '—'}</td>
+                        <td style={{ textAlign: 'right' }}>{row.personCount}</td>
+                        <td>{row.pickupTime ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {serviceList.length === 0 && <p style={{ color: 'var(--color-text-muted)', marginTop: 8 }}>Bu tarihte servis kaydı yok.</p>}
             </div>
           </div>
         </>

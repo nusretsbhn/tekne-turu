@@ -16,3 +16,5 @@ public record DashboardStatsDto(
 public record DayCountDto(string Date, int Total, int CheckedIn);
 
 public record TodayCustomerDto(string FullName, string? Phone, bool CheckedIn, string? AgencyName);
+
+public record ServiceListItemDto(string FullName, string? Phone, string? Hotel, int PersonCount, string? PickupTime);

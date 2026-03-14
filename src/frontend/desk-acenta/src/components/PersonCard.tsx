@@ -2,6 +2,25 @@ import type { PersonForm } from '../types'
 import { validatePerson } from '../validation'
 import type { AgeCategory, Nationality } from '../types'
 
+function birthDateToParts(birthDate: string): { day: string; month: string; year: string } {
+  const v = (birthDate ?? '').trim()
+  if (!v) return { day: '', month: '', year: '' }
+  const ymd = v.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (ymd) return { day: ymd[3], month: ymd[2], year: ymd[1] }
+  const dmy = v.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
+  if (dmy) return { day: dmy[1], month: dmy[2], year: dmy[3] }
+  return { day: '', month: '', year: '' }
+}
+
+function combineBirthDateParts(day: string, month: string, year: string): string {
+  const d = day.trim()
+  const m = month.trim()
+  const y = year.trim()
+  if (!d || !m || !y) return ''
+  const pad = (s: string, len: number) => s.padStart(len, '0')
+  return `${y.padStart(4, '0')}-${pad(m, 2)}-${pad(d, 2)}`
+}
+
 const styles = {
   card: { marginBottom: 12, border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' as const },
   header: { padding: '12px 16px', background: '#f5f5f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' },
@@ -74,7 +93,48 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
           <div style={styles.row}>
             <div>
               <label style={styles.label}>Doğum Tarihi <span style={styles.labelEn}>/ Birth Date</span> <span style={styles.required}>*</span></label>
-              <input type="date" style={styles.input} value={person.birthDate} onChange={(e) => onChange({ birthDate: e.target.value })} required />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                {(() => {
+                  const parts = birthDateToParts(person.birthDate)
+                  return (
+                    <>
+                      <input
+                        type="number"
+                        min={1}
+                        max={31}
+                        placeholder="Gün"
+                        style={{ ...styles.input, width: 64 }}
+                        value={parts.day}
+                        onChange={(e) => onChange({ birthDate: combineBirthDateParts(e.target.value, parts.month, parts.year) })}
+                        required
+                        aria-label="Doğum günü"
+                      />
+                      <input
+                        type="number"
+                        min={1}
+                        max={12}
+                        placeholder="Ay"
+                        style={{ ...styles.input, width: 64 }}
+                        value={parts.month}
+                        onChange={(e) => onChange({ birthDate: combineBirthDateParts(parts.day, e.target.value, parts.year) })}
+                        required
+                        aria-label="Doğum ayı"
+                      />
+                      <input
+                        type="number"
+                        min={1900}
+                        max={2100}
+                        placeholder="Yıl"
+                        style={{ ...styles.input, width: 80 }}
+                        value={parts.year}
+                        onChange={(e) => onChange({ birthDate: combineBirthDateParts(parts.day, parts.month, e.target.value) })}
+                        required
+                        aria-label="Doğum yılı"
+                      />
+                    </>
+                  )
+                })()}
+              </div>
             </div>
             <div>
               <label style={styles.label}>Yaş Kategorisi <span style={styles.labelEn}>/ Age Category</span> <span style={styles.required}>*</span></label>

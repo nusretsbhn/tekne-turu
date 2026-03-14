@@ -26,6 +26,8 @@ public class BookingService
         DateOnly? tourDate,
         List<BookingPersonDto> persons,
         string? agencyName,
+        bool useShuttle = false,
+        string? servicePickupTime = null,
         CancellationToken ct = default)
     {
         if (persons == null || persons.Count == 0)
@@ -88,7 +90,9 @@ public class BookingService
                 Customer = customer,
                 AgeCategory = p.AgeCategory?.Trim() ?? "Yetişkin",
                 CheckedIn = false,
-                AgencyName = string.IsNullOrWhiteSpace(agencyName) ? null : agencyName.Trim()
+                AgencyName = string.IsNullOrWhiteSpace(agencyName) ? null : agencyName.Trim(),
+                UseShuttle = useShuttle,
+                ServicePickupTime = string.IsNullOrWhiteSpace(servicePickupTime) ? null : servicePickupTime.Trim()
             };
             _db.DailyBookings.Add(booking);
             newBookings.Add(booking);

@@ -14,6 +14,8 @@ export async function createBooking(
   persons: PersonForm[],
   tourDate: string,
   agencyName?: string | null,
+  useShuttle?: boolean,
+  servicePickupTime?: string | null,
 ): Promise<{ success: boolean; error?: string }> {
   const body = {
     tourDate: tourDate || null,
@@ -30,6 +32,8 @@ export async function createBooking(
       smsConsent: p.smsConsent,
     })),
     agencyName: agencyName?.trim() || null,
+    useShuttle: useShuttle ?? false,
+    servicePickupTime: servicePickupTime?.trim() || null,
   }
   try {
     const res = await fetch('/api/bookings', {

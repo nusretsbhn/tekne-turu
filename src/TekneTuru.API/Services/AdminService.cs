@@ -171,4 +171,37 @@ public class AdminService
 
         return list;
     }
+
+    /// <summary>
+    /// Seçilen tarihte servis alan rezervasyonları grup bazında döner (Alınış Saati + Acenta).
+    /// </summary>
+    public async Task<List<ServiceListItemDto>> GetServiceListAsync(DateOnly date, CancellationToken ct = default)
+    {
+        var bookings = await _db.DailyBookings
+            .AsNoTracking()
+            .Include(b => b.Customer)
+            .Where(b => b.TourDate == date && b.UseShuttle)
+            .OrderBy(b => b.ServicePickupTime)
+            .ThenBy(b => b.AgencyName)
+            .ThenBy(b => b.Id)
+            .ToListAsync(ct);
+
+        var groups = bookings
+            .GroupBy(b => new { b.ServicePickupTime ?? "", b.AgencyName ?? "" })
+            .Select(g =>
+            {
+                var first = g.First();
+                var c = first.Customer;
+                return new ServiceListItemDto(
+                    c?.FullName ?? "",
+                    c?.Phone,
+                    c?.AccommodationPlace,
+                    g.Count(),
+                    first.ServicePickupTime
+                );
+            })
+            .ToList();
+
+        return groups;
+    }
 }

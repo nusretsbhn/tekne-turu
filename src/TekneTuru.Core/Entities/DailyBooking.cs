@@ -10,4 +10,6 @@ public class DailyBooking
     public bool CheckedIn { get; set; }
     public DateTime? CheckedInAt { get; set; }
     public string? AgencyName { get; set; }
+    public bool UseShuttle { get; set; }
+    public string? ServicePickupTime { get; set; }
 }

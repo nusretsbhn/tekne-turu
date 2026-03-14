@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { fetchTour, fetchTicketNextNumber, createTicket } from '../api'
+import { fetchTour, fetchTicketNextNumber, createTicket, updatePreReservation } from '../api'
 import type { PreReservationItem } from '../api'
 
 function todayStr() {
@@ -90,6 +90,14 @@ export function BiletKes() {
         hasService: form.hasService,
         paymentType: form.paymentType,
       })
+      const preResId = (location.state as { fromPreReservation?: PreReservationItem } | null)?.fromPreReservation?.id
+      if (preResId != null) {
+        try {
+          await updatePreReservation(token, preResId, { status: 'Satış Yapıldı' })
+        } catch {
+          // Ön rezervasyon durumu güncellenemedi; bilet yine de kesildi
+        }
+      }
       setMessage(`Bilet kesildi: ${res.ticketNumber}. Biletler sekmesinden indirebilirsiniz.`)
       setForm((f) => ({
         ...f,
