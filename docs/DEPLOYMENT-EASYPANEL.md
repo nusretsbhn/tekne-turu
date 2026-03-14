@@ -49,3 +49,18 @@ Admin → **Ayarlar** bölümünde:
 - **ShortLinkBaseUrl**: `https://vikingoludeniz.xyz` (kısa linkler `/t/xxx` formatında)
 
 Bu ayarlar SMS şablonlarındaki `{LandingUrl}` ve `{ThanksPageUrl}` için kullanılır.
+
+## 5. Acenta linki – query string korunmalı
+
+Acenta kayıt sayfası **`/acenta/?agency=KOD`** linki ile açılınca acenta adı otomatik dolar. Eğer sunucu `/acenta` isteğini `/acenta/`e yönlendiriyorsa, **query string korunmalı**; yoksa `?agency=xxx` kaybolur ve acenta adı dolmaz.
+
+**Nginx** örneği (slash eklerken query’yi korumak):
+
+```nginx
+# /acenta?agency=xxx → /acenta/?agency=xxx
+location = /acenta {
+    return 301 /acenta/$is_args$args;
+}
+```
+
+**Easypanel / reverse proxy** kullanıyorsanız, yönlendirme kuralında query string’in taşınmasına izin verin. Mümkünse acenta linkini her zaman **slash’lı** verin: `https://vikingoludeniz.xyz/acenta/?agency=5vz76z` (Admin’deki link bu formatta üretilir).

@@ -122,11 +122,18 @@ export default function App() {
   }, [persons, agencyName, tourDate, useShuttle, servicePickupTime])
 
   if (screen === 'start') {
+    const hasAgencyParam = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('agency')?.trim()
     return (
       <div style={styles.wrap}>
         <h1 style={{ textAlign: 'center', marginTop: 48 }}>Viking Ölüdeniz Acenta Yolcu Kayıt Sistemi</h1>
         {agencyLoading && <p style={{ textAlign: 'center', color: '#666', marginTop: 16 }}>Acenta bilgisi yükleniyor...</p>}
         {agencyError && <p style={{ textAlign: 'center', color: '#c00', marginTop: 16 }}>{agencyError}</p>}
+        {!hasAgencyParam && !agencyLocked && !agencyLoading && (
+          <p style={{ textAlign: 'center', fontSize: 13, color: '#666', marginTop: 12, maxWidth: 420, marginLeft: 'auto', marginRight: 'auto' }}>
+            Acenta adı otomatik dolması için linki <strong>slash ile</strong> kullanın: <br />
+            <code style={{ background: '#f0f0f0', padding: '2px 6px', fontSize: 12 }}>.../acenta/?agency=KOD</code>
+          </p>
+        )}
         {agencyLocked && agencyName && !agencyLoading && (
           <p style={{ textAlign: 'center', fontWeight: 600, marginTop: 16 }}>Acenta: {agencyName}</p>
         )}
