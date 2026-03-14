@@ -35,7 +35,7 @@ export function Acentalar() {
     load()
   }, [token])
 
-  const getLink = (shortCode: string) => `${baseUrl.replace(/\/$/, '')}?agency=${shortCode}`
+  const getLink = (shortCode: string) => `${baseUrl.replace(/\/?$/, '')}/?agency=${shortCode}`
 
   const copyLink = (shortCode: string) => {
     navigator.clipboard.writeText(getLink(shortCode)).then(() => {

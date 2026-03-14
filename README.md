@@ -80,6 +80,25 @@ Tarayıcıda `http://localhost:5173` açılır. Giriş ekranı ve dashboard iske
 
 8. **Bilet modülü:** Admin’de Bilet Kes ile bilet no (6 hane), ad-soyad, telefon, tur tarihi, kişi sayısı, otel, not, servis, ödeme tipi ve bilet durumu girilir; Bilet Kes butonuna basılınca şablon üzerine yazılı JPG oluşturulur ve Biletler sekmesinde kayıt altına alınır. Biletler listesinde filtre, İndir, Paylaş ve Düzenle vardır. Bilet şablonu: `src/TekneTuru.API/Templates/bilet.jpg` olmalıdır; `src/frontend/admin/bilet.jpg` dosyasını bu klasöre `bilet.jpg` adıyla kopyalayın.
 
+## Push sonrası hangi servisi deploy etmeli?
+
+Değişen dosyalara göre deploy edilecek servis:
+
+| Değişen yer | Deploy et |
+|-------------|-----------|
+| `src/TekneTuru.API/`, `src/TekneTuru.Core/` | **API** |
+| `src/frontend/admin/` | **Admin** |
+| `src/frontend/desk/` | **Desk** (kayıt ekranı) |
+| `src/frontend/desk-acenta/` | **Acenta** (acenta kayıt ekranı) |
+| `src/frontend/checkin/` | **Check-in** |
+| `src/frontend/landing/` | **Landing** |
+
+- **Sadece API** değiştiyse → API’yi deploy et (DB migration da API ile çalışır).
+- **Birden fazla frontend** değiştiyse → Değişen her frontend servisini deploy et.
+- **Hem API hem frontend** değiştiyse → Önce API, sonra ilgili frontend’leri deploy et.
+
+Easypanel’de tek bir “Frontend” servisi kullanıyorsanız (tüm uygulamalar tek container’da), herhangi bir frontend klasörü değişince **Frontend** servisini bir kez deploy etmeniz yeterlidir.
+
 ## Lisans
 
 Özel proje.

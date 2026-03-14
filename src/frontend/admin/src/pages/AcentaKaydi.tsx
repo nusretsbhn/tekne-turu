@@ -52,7 +52,7 @@ export function AcentaKaydi() {
         phone: form.phone.trim(),
         email: form.email.trim() || undefined,
       })
-      const link = `${baseUrl.replace(/\/$/, '')}?agency=${res.shortCode}`
+      const link = `${baseUrl.replace(/\/?$/, '')}/?agency=${res.shortCode}`
       setCreatedLink(link)
       setMessage('Acenta kaydedildi. Aşağıdaki linki acentaya gönderin; bu linkten girenler Acenta Adı alanını değiştiremez.')
       setForm({ name: '', contactFullName: '', phone: '', email: '' })

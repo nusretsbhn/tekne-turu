@@ -36,9 +36,16 @@ export default function App() {
   const [error, setError] = useState('')
   const [countdown, setCountdown] = useState(5)
 
+  const AGENCY_CODE_KEY = 'acenta_agency_code'
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const code = params.get('agency')?.trim()
+    let code = params.get('agency')?.trim()
+    if (code) {
+      try { sessionStorage.setItem(AGENCY_CODE_KEY, code) } catch { /* ignore */ }
+    } else {
+      try { code = sessionStorage.getItem(AGENCY_CODE_KEY)?.trim() || undefined } catch { /* ignore */ }
+    }
     if (!code) return
     setAgencyLoading(true)
     setAgencyError('')
@@ -49,6 +56,7 @@ export default function App() {
       })
       .catch((err) => {
         setAgencyError(err instanceof Error ? err.message : 'Acenta bulunamadı.')
+        try { sessionStorage.removeItem(AGENCY_CODE_KEY) } catch { /* ignore */ }
       })
       .finally(() => setAgencyLoading(false))
   }, [])
