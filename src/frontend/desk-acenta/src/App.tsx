@@ -26,6 +26,8 @@ export default function App() {
   const [persons, setPersons] = useState<PersonForm[]>([])
   const [agencyName, setAgencyName] = useState('')
   const [agencyLocked, setAgencyLocked] = useState(false)
+  const [agencyLoading, setAgencyLoading] = useState(false)
+  const [agencyError, setAgencyError] = useState('')
   const [useShuttle, setUseShuttle] = useState(false)
   const [servicePickupTime, setServicePickupTime] = useState('')
   const [tourDate, setTourDate] = useState<string>(() => new Date().toISOString().slice(0, 10))
@@ -38,12 +40,17 @@ export default function App() {
     const params = new URLSearchParams(window.location.search)
     const code = params.get('agency')?.trim()
     if (!code) return
+    setAgencyLoading(true)
+    setAgencyError('')
     fetchAgencyByCode(code)
       .then((r) => {
-        setAgencyName(r.name)
+        setAgencyName(r.name ?? '')
         setAgencyLocked(true)
       })
-      .catch(() => {})
+      .catch((err) => {
+        setAgencyError(err instanceof Error ? err.message : 'Acenta bulunamadı.')
+      })
+      .finally(() => setAgencyLoading(false))
   }, [])
 
   const startNew = useCallback(() => {
@@ -110,8 +117,18 @@ export default function App() {
     return (
       <div style={styles.wrap}>
         <h1 style={{ textAlign: 'center', marginTop: 48 }}>Viking Ölüdeniz Acenta Yolcu Kayıt Sistemi</h1>
-        <button type="button" style={styles.startBtn} onClick={startNew}>
-          Yeni Grup Kaydı Başlat
+        {agencyLoading && <p style={{ textAlign: 'center', color: '#666', marginTop: 16 }}>Acenta bilgisi yükleniyor...</p>}
+        {agencyError && <p style={{ textAlign: 'center', color: '#c00', marginTop: 16 }}>{agencyError}</p>}
+        {agencyLocked && agencyName && !agencyLoading && (
+          <p style={{ textAlign: 'center', fontWeight: 600, marginTop: 16 }}>Acenta: {agencyName}</p>
+        )}
+        <button
+          type="button"
+          style={styles.startBtn}
+          onClick={startNew}
+          disabled={agencyLoading}
+        >
+          {agencyLoading ? 'Yükleniyor...' : 'Yeni Grup Kaydı Başlat'}
         </button>
       </div>
     )
@@ -137,11 +154,13 @@ export default function App() {
         <label style={styles.agencyLabel}>Acenta Adı <span style={{ fontSize: 12, color: '#888', fontWeight: 400 }}>/ Agency Name</span> <span style={{ color: '#c00', marginLeft: 2 }}>*</span></label>
         <input
           type="text"
-          style={{ ...styles.agencyInput, ...(agencyLocked ? { background: '#f0f0f0', cursor: 'default' } : {}) }}
+          style={{ ...styles.agencyInput, ...(agencyLocked ? { background: '#eee', cursor: 'not-allowed', color: '#333' } : {}) }}
           value={agencyName}
           onChange={(e) => !agencyLocked && setAgencyName(e.target.value)}
           placeholder="Örn: XYZ Turizm"
           readOnly={agencyLocked}
+          disabled={agencyLocked}
+          aria-readonly={agencyLocked}
         />
         {agencyLocked && <span style={{ fontSize: 12, color: '#666', marginLeft: 8 }}>(Link ile açıldı, değiştirilemez)</span>}
       </div>
