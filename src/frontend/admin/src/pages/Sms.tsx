@@ -71,7 +71,7 @@ export function Sms() {
       .catch((e) => setMessage(e instanceof Error ? e.message : 'Gönderilemedi.'))
       .finally(() => setSendLoading(false))
   }
-  const canReceive = (c: CustomerListItem) => (c.nationality?.toUpperCase() === 'TR' && !!c.phone?.trim())
+  const canReceive = (c: CustomerListItem) => (c.nationality?.trim().toUpperCase() === 'TR' && !!c.phone?.trim())
 
   return (
     <div>

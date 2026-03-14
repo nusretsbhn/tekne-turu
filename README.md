@@ -66,7 +66,12 @@ Tarayıcıda `http://localhost:5173` açılır. Giriş ekranı ve dashboard iske
 
 - **API:** `src/TekneTuru.API/appsettings.json` — `ConnectionStrings:DefaultConnection` ve `Cors:AllowedOrigins` buradan düzenlenir.
 - PostgreSQL şifresini `appsettings.Development.json` içinde override edebilirsiniz (bu dosyayı .gitignore’da tutun).
-- **SMS (NetGSM):** Gerçek SMS için `NetGsm:Usercode`, `NetGsm:Password` ve `NetGsm:MsgHeader` doldurun. Üçü de doluysa NetGSM kullanılır; boşsa sadece log modu çalışır. Production’da şifreyi environment variable ile verin.
+- **SMS (NetGSM):** Gerçek SMS için `NetGsm:Usercode`, `NetGsm:Password` ve `NetGsm:MsgHeader` doldurun. Üçü de doluysa NetGSM kullanılır; boşsa sadece log modu çalışır.
+  - **Sunucuda (production):** Şifreyi repoya koymayın; ortam değişkeni verin. ASP.NET Core `NetGsm` bölümünü env’den okur. Tanımlanacak değişkenler:
+    - `NetGsm__Usercode` = abone numarası
+    - `NetGsm__Password` = API şifresi
+    - `NetGsm__MsgHeader` = onaylı SMS başlığı  
+    (Çift alt çizgi `__` bölüm:anahtar karşılığıdır.) Docker / Easypanel / VPS’te bu üç değişkeni eklemeniz yeterli.
 - **Kısa linkler:** Admin → Ayarlar’da **ShortLinkBaseUrl** (örn. `https://firma.com`) tanımlıysa, rezervasyon SMS’indeki link bu domain üzerinden kısa formatla gider: `https://firma.com/t/xK9mP2`. API’de `GET /t/{code}` müşteriye özel landing’e yönlendirir; `/t/thanks` teşekkür sayfasına gider. Tıklamalar `ShortLinkClick` tablosunda kaydedilir.
 
 ## Geliştirme Fazları (PRD)
