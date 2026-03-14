@@ -5,7 +5,7 @@ using TekneTuru.Core.Entities;
 namespace TekneTuru.API.Services;
 
 /// <summary>
-/// Her gün saat 15:00'te (Türkiye saati) o günkü tura katılan ve SMS onayı olan kişilere "tur sonu teşekkür" SMS'i gönderir.
+/// Her gün saat 17:00'de (Türkiye saati) o günkü tura katılan ve SMS onayı olan kişilere "tur sonu teşekkür" SMS'i gönderir.
 /// </summary>
 public class TourEndSmsBackgroundService : BackgroundService
 {
@@ -23,9 +23,9 @@ public class TourEndSmsBackgroundService : BackgroundService
                 var turkeyTz = GetTurkeyTimeZone();
                 var turkeyNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, turkeyTz);
                 var today = DateOnly.FromDateTime(turkeyNow);
-                var isFifteen = turkeyNow.Hour == 15 && turkeyNow.Minute < 5; // 15:00–15:04 arası tetikle
+                var isSeventeen = turkeyNow.Hour == 17 && turkeyNow.Minute < 5; // 17:00–17:04 arası tetikle
 
-                if (isFifteen && _lastRunDate != today)
+                if (isSeventeen && _lastRunDate != today)
                 {
                     _lastRunDate = today;
                     await SendTourEndSmsForDateAsync(today, stoppingToken);
