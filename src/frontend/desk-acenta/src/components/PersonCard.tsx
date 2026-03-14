@@ -17,10 +17,10 @@ function birthDateToParts(birthDate: string): { day: string; month: string; year
 function combineBirthDateParts(day: string, month: string, year: string): string {
   const d = day.trim()
   const m = month.trim()
-  const y = year.trim()
-  if (d && m && y) {
+  const y = year.trim().slice(0, 4)
+  if (d && m && y.length === 4) {
     const pad = (s: string, len: number) => s.padStart(len, '0')
-    return `${y.padStart(4, '0')}-${pad(m, 2)}-${pad(d, 2)}`
+    return `${y}-${pad(m, 2)}-${pad(d, 2)}`
   }
   const parts: string[] = []
   if (d) parts.push(`D:${d}`)
