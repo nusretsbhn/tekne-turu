@@ -9,6 +9,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       minify: false,
+      workbox: {
+        globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
+      },
       manifest: {
         name: 'Tekne Turu Acenta Kayıt',
         short_name: 'Acenta Kayıt',
