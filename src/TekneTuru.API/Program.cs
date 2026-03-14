@@ -6,10 +6,12 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using TekneTuru.API.Configuration;
 using TekneTuru.API.Data;
 using TekneTuru.API.Models;
 using TekneTuru.API.Services;
 using TekneTuru.Core.Entities;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,7 +62,15 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<LandingService>();
 builder.Services.AddScoped<AdminService>();
-builder.Services.AddScoped<ISmsSender, LogOnlySmsSender>();
+
+builder.Services.Configure<NetGsmOptions>(builder.Configuration.GetSection(NetGsmOptions.SectionName));
+builder.Services.AddHttpClient<NetGsmSmsSender>();
+builder.Services.AddScoped<ISmsSender>(sp =>
+{
+    var options = sp.GetRequiredService<IOptions<NetGsmOptions>>().Value;
+    return options.IsConfigured ? sp.GetRequiredService<NetGsmSmsSender>() : new LogOnlySmsSender();
+});
+
 builder.Services.AddScoped<SmsService>();
 builder.Services.AddScoped<SmsConsentService>();
 builder.Services.AddScoped<ShortLinkService>();
