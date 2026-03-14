@@ -10,7 +10,9 @@ export function validatePerson(p: PersonForm): string | null {
     if (!p.idNumber?.trim()) return 'Pasaport numarası giriniz.'
   }
   if (!p.birthDate) return 'Doğum tarihi seçiniz.'
+  if (/D:|\|M:|\|Y:/.test(p.birthDate)) return 'Doğum tarihi için gün, ay ve yılı tam giriniz.'
   const birth = parseBirthDate(p.birthDate)
+  if (Number.isNaN(birth.getTime())) return 'Doğum tarihi geçerli bir tarih olmalıdır.'
   if (birth > new Date()) return 'Doğum tarihi geçmiş bir tarih olmalıdır.'
   if (!p.ageCategory) return 'Yaş kategorisi seçiniz.'
   if (!p.phone?.trim()) return 'Telefon giriniz.'

@@ -9,6 +9,8 @@ function birthDateToParts(birthDate: string): { day: string; month: string; year
   if (ymd) return { day: ymd[3], month: ymd[2], year: ymd[1] }
   const dmy = v.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
   if (dmy) return { day: dmy[1], month: dmy[2], year: dmy[3] }
+  const partial = v.match(/^D:([^|]*)(?:\|M:([^|]*))?(?:\|Y:(.*))?$/)
+  if (partial) return { day: partial[1] ?? '', month: partial[2] ?? '', year: partial[3] ?? '' }
   return { day: '', month: '', year: '' }
 }
 
@@ -16,9 +18,15 @@ function combineBirthDateParts(day: string, month: string, year: string): string
   const d = day.trim()
   const m = month.trim()
   const y = year.trim()
-  if (!d || !m || !y) return ''
-  const pad = (s: string, len: number) => s.padStart(len, '0')
-  return `${y.padStart(4, '0')}-${pad(m, 2)}-${pad(d, 2)}`
+  if (d && m && y) {
+    const pad = (s: string, len: number) => s.padStart(len, '0')
+    return `${y.padStart(4, '0')}-${pad(m, 2)}-${pad(d, 2)}`
+  }
+  const parts: string[] = []
+  if (d) parts.push(`D:${d}`)
+  if (m) parts.push(`M:${m}`)
+  if (y) parts.push(`Y:${y}`)
+  return parts.join('|')
 }
 
 const styles = {
