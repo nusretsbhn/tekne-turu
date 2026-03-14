@@ -1,28 +1,50 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { fetchTour, fetchTicketNextNumber, createTicket } from '../api'
+import type { PreReservationItem } from '../api'
 
 function todayStr() {
   const t = new Date()
   return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0')
 }
 
+function formFromPreReservation(pr: PreReservationItem | null | undefined) {
+  if (!pr) return null
+  return {
+    fullName: pr.fullName ?? '',
+    phone: pr.phone ?? '',
+    tourDate: pr.tourDate?.slice(0, 10) ?? todayStr(),
+    adultCount: pr.adultCount ?? 2,
+    childCount: pr.childCount ?? 0,
+    babyCount: pr.babyCount ?? 0,
+    hotel: pr.hotelName ?? '',
+    note: '',
+    hasService: false,
+    paymentType: 'ToPay' as const,
+  }
+}
+
 export function BiletKes() {
   const { token } = useAuth()
+  const location = useLocation()
   const [nextNumber, setNextNumber] = useState<string>('')
   const [tourStart, setTourStart] = useState<string>('')
   const [tourEnd, setTourEnd] = useState<string>('')
-  const [form, setForm] = useState({
-    fullName: '',
-    phone: '',
-    tourDate: todayStr(),
-    adultCount: 2,
-    childCount: 0,
-    babyCount: 0,
-    hotel: '',
-    note: '',
-    hasService: false,
-    paymentType: 'ToPay' as 'ToPay' | 'FullPaid' | 'Free',
+  const [form, setForm] = useState(() => {
+    const pr = (location.state as { fromPreReservation?: PreReservationItem } | null)?.fromPreReservation
+    return formFromPreReservation(pr) ?? {
+      fullName: '',
+      phone: '',
+      tourDate: todayStr(),
+      adultCount: 2,
+      childCount: 0,
+      babyCount: 0,
+      hotel: '',
+      note: '',
+      hasService: false,
+      paymentType: 'ToPay' as 'ToPay' | 'FullPaid' | 'Free',
+    }
   })
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState('')
@@ -35,6 +57,12 @@ export function BiletKes() {
       if (t?.endTime) setTourEnd(t.endTime)
     }).catch(() => {})
   }, [token])
+
+  useEffect(() => {
+    const pr = (location.state as { fromPreReservation?: PreReservationItem } | null)?.fromPreReservation
+    const next = formFromPreReservation(pr)
+    if (next) setForm((f) => ({ ...f, ...next }))
+  }, [location.state])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

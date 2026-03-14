@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   fetchPreReservations,
@@ -12,6 +13,7 @@ type FilterStatus = '' | 'Yeni' | 'Satış Yapıldı' | 'İptal'
 
 export function PreReservations() {
   const { token } = useAuth()
+  const navigate = useNavigate()
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [status, setStatus] = useState<FilterStatus>('Yeni')
@@ -149,6 +151,13 @@ export function PreReservations() {
                 </td>
                 <td>{p.status}</td>
                 <td>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/bilet-kes', { state: { fromPreReservation: p } })}
+                    className="btn btn-primary btn-sm"
+                  >
+                    Bilet oluştur
+                  </button>
                   <button type="button" onClick={() => openDetail(p.id)} className="btn btn-secondary btn-sm">
                     Detay
                   </button>
