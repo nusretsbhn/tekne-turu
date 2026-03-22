@@ -112,8 +112,6 @@ public class BookingService
             }
         }
 
-        var landingBaseUrl = (await _db.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == "LandingBaseUrl", ct))?.Value?.TrimEnd('/') ?? "http://localhost:3000";
-        var shortLinkBaseUrl = (await _db.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == "ShortLinkBaseUrl", ct))?.Value?.TrimEnd('/');
         foreach (var b in newBookings)
         {
             var isTr = string.Equals(b.Customer.Nationality?.Trim(), "TR", StringComparison.OrdinalIgnoreCase);
@@ -121,17 +119,7 @@ public class BookingService
             {
                 try
                 {
-                    string landingUrl;
-                    if (!string.IsNullOrEmpty(shortLinkBaseUrl))
-                    {
-                        var code = await _shortLink.CreateForBookingAsync(b.Id, ct);
-                        landingUrl = $"{shortLinkBaseUrl}/t/{code}";
-                    }
-                    else
-                    {
-                        var token = await _landing.CreateTokenForBookingAsync(b.Id, ct);
-                        landingUrl = string.IsNullOrEmpty(token) ? landingBaseUrl : $"{landingBaseUrl}?token={token}";
-                    }
+                    var landingUrl = await BuildLandingUrlForBookingAsync(b.Id, ct);
                     await _sms.SendWithTemplateAsync(
                         b.Customer.Phone,
                         "booking-confirmation",
@@ -152,6 +140,97 @@ public class BookingService
         }
 
         return (true, null, bookingIds);
+    }
+
+    /// <summary>
+    /// Müşteri telefonu güncellendikten sonra: tur tarihi gelmemiş, TR, SMS onayı, yeni numara eskiden farklıysa
+    /// booking-confirmation SMS'ini yeni numaraya gönderir (desk kaydı sonrası Admin vb. düzenlemeler için).
+    /// </summary>
+    public async Task TryResendBookingConfirmationAfterPhoneChangeAsync(int customerId, string? phoneBeforeUpdate, CancellationToken ct = default)
+    {
+        var customer = await _db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == customerId, ct);
+        if (customer == null) return;
+
+        var normOld = NormalizePhoneDigits(phoneBeforeUpdate);
+        var normNew = NormalizePhoneDigits(customer.Phone);
+        if (string.IsNullOrEmpty(normNew) || normOld == normNew) return;
+        if (!string.Equals(customer.Nationality?.Trim(), "TR", StringComparison.OrdinalIgnoreCase)) return;
+        if (!customer.SmsConsent) return;
+
+        var todayTr = GetTodayTurkeyDateOnly();
+        var booking = await _db.DailyBookings
+            .AsNoTracking()
+            .Where(b => b.CustomerId == customerId && b.TourDate >= todayTr)
+            .OrderBy(b => b.TourDate)
+            .ThenBy(b => b.Id)
+            .FirstOrDefaultAsync(ct);
+        if (booking == null) return;
+
+        try
+        {
+            await _smsConsent.CreateConsentAsync(customerId, customer.Phone!, "Approved", ct);
+        }
+        catch
+        {
+            // Zaten kayıt olabilir
+        }
+
+        try
+        {
+            var landingUrl = await BuildLandingUrlForBookingAsync(booking.Id, ct);
+            await _sms.SendWithTemplateAsync(
+                customer.Phone!,
+                "booking-confirmation",
+                new Dictionary<string, string>
+                {
+                    ["Name"] = customer.FullName ?? "",
+                    ["TourDate"] = booking.TourDate.ToString("dd.MM.yyyy"),
+                    ["LandingUrl"] = landingUrl
+                },
+                customer.Id,
+                ct);
+        }
+        catch
+        {
+            // Güncelleme başarılı; SMS hatası işlemi iptal etmez
+        }
+    }
+
+    private async Task<string> BuildLandingUrlForBookingAsync(int bookingId, CancellationToken ct)
+    {
+        var landingBaseUrl = (await _db.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == "LandingBaseUrl", ct))?.Value?.TrimEnd('/') ?? "http://localhost:3000";
+        var shortLinkBaseUrl = (await _db.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == "ShortLinkBaseUrl", ct))?.Value?.TrimEnd('/');
+        if (!string.IsNullOrEmpty(shortLinkBaseUrl))
+        {
+            var code = await _shortLink.CreateForBookingAsync(bookingId, ct);
+            return $"{shortLinkBaseUrl}/t/{code}";
+        }
+        var token = await _landing.CreateTokenForBookingAsync(bookingId, ct);
+        return string.IsNullOrEmpty(token) ? landingBaseUrl : $"{landingBaseUrl}?token={token}";
+    }
+
+    private static DateOnly GetTodayTurkeyDateOnly()
+    {
+        var tz = GetTurkeyTimeZone();
+        var turkeyNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+        return DateOnly.FromDateTime(turkeyNow);
+    }
+
+    private static TimeZoneInfo GetTurkeyTimeZone()
+    {
+        try { return TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul"); }
+        catch { }
+        try { return TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time"); }
+        catch { }
+        return TimeZoneInfo.Utc;
+    }
+
+    private static string NormalizePhoneDigits(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone)) return "";
+        var p = new string(phone.Where(char.IsDigit).ToArray());
+        if (p.Length >= 10 && p.StartsWith('0')) p = p[1..];
+        return p;
     }
 
     public async Task<(List<BookingListItemDto> List, BookingSummaryDto Summary)> GetBookingsForDateAsync(

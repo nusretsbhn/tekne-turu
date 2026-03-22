@@ -509,12 +509,13 @@ adminGroup.MapGet("/customers/{id:int}", async (int id, AppDbContext db, Cancell
     }).FirstOrDefaultAsync(ct);
     return c == null ? Results.NotFound() : Results.Ok(c);
 });
-adminGroup.MapPut("/customers/{id:int}", async (int id, UpdateCustomerRequest body, AppDbContext db, CancellationToken ct) =>
+adminGroup.MapPut("/customers/{id:int}", async (int id, UpdateCustomerRequest body, AppDbContext db, BookingService bookingService, CancellationToken ct) =>
 {
     var c = await db.Customers.FindAsync(new object[] { id }, ct);
     if (c == null) return Results.NotFound();
     if (string.IsNullOrWhiteSpace(body.FullName)) return Results.BadRequest(new { error = "Ad soyad giriniz." });
     if (string.IsNullOrWhiteSpace(body.IdNumber)) return Results.BadRequest(new { error = "TC veya pasaport no giriniz." });
+    var phoneBeforeUpdate = c.Phone;
     c.FullName = body.FullName.Trim();
     c.IdNumber = body.IdNumber.Trim();
     c.Phone = string.IsNullOrWhiteSpace(body.Phone) ? null : body.Phone.Trim();
@@ -526,6 +527,7 @@ adminGroup.MapPut("/customers/{id:int}", async (int id, UpdateCustomerRequest bo
     c.KvkkConsent = body.KvkkConsent;
     c.SmsConsent = body.SmsConsent;
     await db.SaveChangesAsync(ct);
+    await bookingService.TryResendBookingConfirmationAfterPhoneChangeAsync(id, phoneBeforeUpdate, ct);
     return Results.Ok(new { id = c.Id });
 });
 adminGroup.MapPatch("/bookings/{id:int}", async (int id, Dictionary<string, object?>? body, AppDbContext db, CancellationToken ct) =>
