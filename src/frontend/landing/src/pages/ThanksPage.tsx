@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { fetchThanksSettings, type ThanksSettings } from '../api'
 
 /** Teşekkür sayfası — Google yorum butonu sabit adres (ayarlardan okunmaz). */
-const GOOGLE_REVIEW_BUTTON_URL = 'https://vikingoludeniz.xyz/landing/thanks'
+const GOOGLE_REVIEW_BUTTON_URL =
+  'https://search.google.com/local/writereview?placeid=ChIJaSIYQ6BoyY8RuqIzhDywwzg'
 
 export function ThanksPage() {
   const [settings, setSettings] = useState<ThanksSettings | null>(null)
