@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { ContactActionButtons } from '../components/ContactActionButtons'
 import { fetchFeedbackList, fetchFeedback, markFeedbackProcessed, type FeedbackItem } from '../api'
 
 export function Feedback() {
@@ -85,6 +86,7 @@ export function Feedback() {
           <tr>
             <th>Tarih</th>
             <th>Tür</th>
+            <th>Telefon</th>
             <th>Mesaj (özet)</th>
             <th>Durum</th>
             <th></th>
@@ -95,10 +97,14 @@ export function Feedback() {
             <tr key={f.id} style={rowBg(f.status)}>
               <td>{new Date(f.createdAt).toLocaleString('tr-TR')}</td>
               <td>{f.type}</td>
+              <td>{f.customerPhone ?? '—'}</td>
               <td style={{ maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.message}>{f.message}</td>
               <td>{f.status}</td>
-              <td>
-                <button type="button" onClick={() => openDetail(f.id)} className="btn btn-secondary btn-sm">İncele</button>
+              <td style={{ whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <button type="button" onClick={() => openDetail(f.id)} className="btn btn-secondary btn-sm">İncele</button>
+                  <ContactActionButtons phone={f.customerPhone} />
+                </div>
               </td>
             </tr>
           ))}
@@ -117,7 +123,17 @@ export function Feedback() {
                 <p><strong>Tarih:</strong> {new Date(detail.createdAt).toLocaleString('tr-TR')}</p>
                 <p><strong>Tür:</strong> {detail.type}</p>
                 <p><strong>Durum:</strong> {detail.status}</p>
-                {(detail.customerName ?? detail.customerId != null) && <p><strong>Müşteri:</strong> {detail.customerName ?? `#${detail.customerId}`}</p>}
+                {(detail.customerName ?? detail.customerId != null) && (
+                  <p>
+                    <strong>Müşteri:</strong> {detail.customerName ?? `#${detail.customerId}`}
+                    {detail.customerPhone && (
+                      <>
+                        {' '}
+                        <strong>Telefon:</strong> {detail.customerPhone}
+                      </>
+                    )}
+                  </p>
+                )}
                 <p><strong>Mesaj:</strong></p>
                 <div style={{ whiteSpace: 'pre-wrap', padding: 12, background: 'var(--color-bg)', borderRadius: 'var(--radius)', marginBottom: 16 }}>{detail.message}</div>
                 {detail.status === 'Yeni' && (

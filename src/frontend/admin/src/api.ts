@@ -283,7 +283,7 @@ export async function sendBulkSms(token: string, customerIds: number[], message:
   return res.json()
 }
 
-export type FeedbackItem = { id: number; type: string; message: string; customerId: number | null; customerName?: string | null; bookingId?: number | null; status: string; createdAt: string; processedAt: string | null }
+export type FeedbackItem = { id: number; type: string; message: string; customerId: number | null; customerName?: string | null; customerPhone?: string | null; bookingId?: number | null; status: string; createdAt: string; processedAt: string | null }
 export async function fetchFeedbackList(token: string, opts?: { dateFrom?: string; dateTo?: string; type?: string }): Promise<FeedbackItem[]> {
   const p = new URLSearchParams()
   if (opts?.dateFrom) p.set('dateFrom', opts.dateFrom)

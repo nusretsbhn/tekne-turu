@@ -657,7 +657,23 @@ adminGroup.MapGet("/feedback", async (DateOnly? dateFrom, DateOnly? dateTo, stri
         query = query.Where(f => f.CreatedAt < dateTo.Value.AddDays(1).ToDateTime(TimeOnly.MinValue));
     if (!string.IsNullOrWhiteSpace(type))
         query = query.Where(f => f.Type == type.Trim());
-    var list = await query.OrderByDescending(f => f.CreatedAt).Select(f => new { f.Id, f.Type, f.Message, f.CustomerId, f.BookingId, f.Status, f.CreatedAt, f.ProcessedAt }).ToListAsync(ct);
+    var list = await (
+        from f in query
+        join c in db.Customers.AsNoTracking() on f.CustomerId equals c.Id into custs
+        from c in custs.DefaultIfEmpty()
+        orderby f.CreatedAt descending
+        select new
+        {
+            f.Id,
+            f.Type,
+            f.Message,
+            f.CustomerId,
+            f.BookingId,
+            f.Status,
+            f.CreatedAt,
+            f.ProcessedAt,
+            CustomerPhone = c != null ? c.Phone : null
+        }).ToListAsync(ct);
     return Results.Ok(list);
 });
 adminGroup.MapGet("/feedback/{id:int}", async (int id, AppDbContext db, CancellationToken ct) =>
@@ -665,9 +681,14 @@ adminGroup.MapGet("/feedback/{id:int}", async (int id, AppDbContext db, Cancella
     var fb = await db.Feedbacks.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id, ct);
     if (fb == null) return Results.NotFound();
     string? customerName = null;
+    string? customerPhone = null;
     if (fb.CustomerId.HasValue)
-        customerName = await db.Customers.AsNoTracking().Where(c => c.Id == fb.CustomerId.Value).Select(c => c.FullName).FirstOrDefaultAsync(ct);
-    return Results.Ok(new { fb.Id, fb.Type, fb.Message, fb.CustomerId, CustomerName = customerName, fb.Status, fb.CreatedAt, fb.ProcessedAt });
+    {
+        var cust = await db.Customers.AsNoTracking().Where(c => c.Id == fb.CustomerId.Value).Select(c => new { c.FullName, c.Phone }).FirstOrDefaultAsync(ct);
+        customerName = cust?.FullName;
+        customerPhone = cust?.Phone;
+    }
+    return Results.Ok(new { fb.Id, fb.Type, fb.Message, fb.CustomerId, CustomerName = customerName, CustomerPhone = customerPhone, fb.Status, fb.CreatedAt, fb.ProcessedAt });
 });
 adminGroup.MapPatch("/feedback/{id:int}", async (int id, AppDbContext db, CancellationToken ct) =>
 {

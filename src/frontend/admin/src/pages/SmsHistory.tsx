@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { ContactActionButtons } from '../components/ContactActionButtons'
 import { fetchSmsLog, fetchSmsLogById, type SmsLogItem, type SmsLogDetail } from '../api'
 
 export function SmsHistory() {
@@ -74,8 +75,11 @@ export function SmsHistory() {
                   <td>{l.customerFullName ?? '—'}</td>
                   <td>{l.templateKey}</td>
                   <td>{l.status}</td>
-                  <td>
-                    <button type="button" onClick={() => openDetail(l.id)} className="btn btn-secondary btn-sm">Görüntüle</button>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <button type="button" onClick={() => openDetail(l.id)} className="btn btn-secondary btn-sm">Görüntüle</button>
+                      <ContactActionButtons phone={l.phone} />
+                    </div>
                   </td>
                 </tr>
               ))}
