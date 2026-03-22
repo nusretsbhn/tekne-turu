@@ -11,6 +11,8 @@ obj/
 .vs/
 *.csproj.user
 appsettings.*.local.json
+# Yerel gizli ayarlar (NetGSM, DB şifresi vb.) — kopyalayın: cp appsettings.Development.example.json appsettings.Development.json
+src/TekneTuru.API/appsettings.Development.json
 
 # Node / Frontend
 node_modules/

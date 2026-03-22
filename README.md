@@ -65,7 +65,7 @@ Tarayıcıda `http://localhost:5173` açılır. Giriş ekranı ve dashboard iske
 ## Yapılandırma
 
 - **API:** `src/TekneTuru.API/appsettings.json` — `ConnectionStrings:DefaultConnection` ve `Cors:AllowedOrigins` buradan düzenlenir.
-- PostgreSQL şifresini `appsettings.Development.json` içinde override edebilirsiniz (bu dosyayı .gitignore’da tutun).
+- Yerel geliştirme: `src/TekneTuru.API/appsettings.Development.example.json` dosyasını `appsettings.Development.json` olarak kopyalayın ve NetGSM/DB bilgilerinizi girin; `appsettings.Development.json` repoya eklenmez (.gitignore).
 - **SMS (NetGSM):** Gerçek SMS için `NetGsm:Usercode`, `NetGsm:Password` ve `NetGsm:MsgHeader` doldurun. Üçü de doluysa NetGSM kullanılır; boşsa sadece log modu çalışır.
   - **Sunucuda (production):** Şifreyi repoya koymayın; ortam değişkeni verin. ASP.NET Core `NetGsm` bölümünü env’den okur. Tanımlanacak değişkenler:
     - `NetGsm__Usercode` = abone numarası
