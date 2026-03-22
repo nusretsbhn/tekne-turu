@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
 import { fetchMarketingLandingData, submitPreReservation, type MarketingLandingData } from '../api'
+import { toYoutubeEmbedUrl } from '../utils/youtubeEmbed'
 
 type Screen = 'idle' | 'success' | 'error'
 
@@ -33,7 +34,7 @@ export function MarketingPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!form.fullName.trim() || !form.phone.trim() || !form.tourDate) return
     setSubmitting(true)
@@ -78,15 +79,19 @@ export function MarketingPage() {
     )
   }
 
-  // Göreli URL'leri sayfa origin'i ile birleştir (proxy ile /uploads API'ye gider, kırık resim olmaz)
+  // Göreli /uploads vb. — API ile landing farklı domaindeyse VITE_API_BASE_URL kullanın
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
   const resolveUrl = (url: string | null | undefined): string => {
     if (!url) return ''
     if (url.startsWith('http://') || url.startsWith('https://')) return url
-    return url.startsWith('/') ? `${window.location.origin}${url}` : `${window.location.origin}/${url}`
+    const origin = apiBase || window.location.origin
+    return url.startsWith('/') ? `${origin}${url}` : `${origin}/${url}`
   }
   const bannerUrl = resolveUrl(data.bannerUrl) || `${window.location.origin}/banner.jpg`
 
   // Fiyat metninden Yetişkin/Çocuk/Bebek fiyatlarını çıkar (örn: "Yetişkin 2000₺, Çocuk 1000₺, Bebek 0₺")
+  const videoEmbedSrc = data.videoUrl ? toYoutubeEmbedUrl(data.videoUrl) : null
+
   const priceItems: { label: string; price: string }[] = []
   if (data.price) {
     const re = /(Yetişkin|Çocuk|Bebek)\s*[:\s]*([^,]+)/gi
@@ -129,6 +134,47 @@ export function MarketingPage() {
       </header>
 
       <main style={styles.main}>
+        {(data.googleReviewsUrl || data.locationMapUrl || data.locationMapEmbedUrl) && (
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>Yorumlar ve konum</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+              {data.googleReviewsUrl && (
+                <a
+                  href={data.googleReviewsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={styles.googleReviewsBtn}
+                >
+                  Google&apos;da yorumları gör
+                </a>
+              )}
+            </div>
+            {(data.locationMapEmbedUrl || data.locationMapUrl) && (
+              <div>
+                {data.locationMapEmbedUrl && (
+                  <div style={styles.mapWrap}>
+                    <iframe
+                      src={data.locationMapEmbedUrl}
+                      title="Konum haritası"
+                      style={styles.mapIframe}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
+                )}
+                {data.locationMapUrl && (
+                  <p style={{ marginTop: 12, marginBottom: 0, fontSize: 15 }}>
+                    <a href={data.locationMapUrl} target="_blank" rel="noopener noreferrer" style={styles.linkMap}>
+                      {data.locationMapEmbedUrl ? 'Haritayı Google Maps’te tam ekran aç' : 'Konumu haritada aç'}
+                    </a>
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
         {data.services && (
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>Hizmetler</h2>
@@ -192,18 +238,18 @@ export function MarketingPage() {
 
         {data.videoUrl && (
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Tur Videosu</h2>
+            <h2 style={styles.sectionTitle}>Tur videosu</h2>
             <div style={styles.videoWrap}>
-              {data.videoUrl.includes('youtube.com') || data.videoUrl.includes('youtu.be') ? (
+              {videoEmbedSrc ? (
                 <iframe
-                  src={data.videoUrl}
+                  src={videoEmbedSrc}
                   title="Tur videosu"
                   style={styles.videoIframe}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 />
               ) : (
-                <video src={data.videoUrl} style={styles.videoIframe} controls />
+                <video src={resolveUrl(data.videoUrl)} style={styles.videoIframe} controls />
               )}
             </div>
           </section>
@@ -393,7 +439,7 @@ export function MarketingPage() {
   )
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: '100vh',
     background: '#f5f5f5',
@@ -616,6 +662,40 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     height: '100%',
     border: 'none',
+  },
+  googleReviewsBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '12px 20px',
+    background: '#fff',
+    color: '#1a1a1a',
+    border: '1px solid #dadce0',
+    borderRadius: 8,
+    fontWeight: 600,
+    fontSize: 15,
+    textDecoration: 'none',
+    boxShadow: '0 1px 2px rgba(60,64,67,.15)',
+  },
+  mapWrap: {
+    position: 'relative',
+    paddingBottom: '56.25%',
+    height: 0,
+    borderRadius: 12,
+    overflow: 'hidden',
+    border: '1px solid #e8eaed',
+    background: '#e8eaed',
+  },
+  mapIframe: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    border: 'none',
+  },
+  linkMap: {
+    color: '#1a73e8',
+    fontWeight: 600,
+    textDecoration: 'underline',
   },
   modalBackdrop: {
     position: 'fixed',

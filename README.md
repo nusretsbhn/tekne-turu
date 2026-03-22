@@ -73,6 +73,7 @@ Tarayıcıda `http://localhost:5173` açılır. Giriş ekranı ve dashboard iske
     - `NetGsm__MsgHeader` = onaylı SMS başlığı  
     (Çift alt çizgi `__` bölüm:anahtar karşılığıdır.) Docker / Easypanel / VPS’te bu üç değişkeni eklemeniz yeterli.
 - **Kısa linkler:** Admin → Ayarlar’da **ShortLinkBaseUrl** (örn. `https://firma.com`) tanımlıysa, rezervasyon SMS’indeki link bu domain üzerinden kısa formatla gider: `https://firma.com/t/xK9mP2`. API’de `GET /t/{code}` müşteriye özel landing’e yönlendirir; `/t/thanks` teşekkür sayfasına gider. Tıklamalar `ShortLinkClick` tablosunda kaydedilir.
+- **Tanıtım sayfası (`/landing/tanitim`):** Admin → **Pazarlama Ayarları**’nda Google yorumlar linki, konum (Google Maps `maps.app` / tam link), isteğe bağlı **Harita yerleştir** embed `src` URL’si ve YouTube videosu tanımlanır. Banner/galeri/durak görselleri API yanıtında mutlak URL olarak döner; statik site ile API farklı domaindeyse landing build sırasında `VITE_API_BASE_URL` ile API kökünü verin (örn. `https://api.firma.com`).
 
 ## Geliştirme Fazları (PRD)
 

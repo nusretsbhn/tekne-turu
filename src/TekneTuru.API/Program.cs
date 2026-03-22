@@ -267,6 +267,12 @@ if (!string.IsNullOrEmpty(conn))
     {
         db.Settings.Add(new Setting { Key = "MarketingGalleryJson", Value = "[]", UpdatedAt = DateTime.UtcNow });
     }
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingGoogleReviewsUrl"))
+        db.Settings.Add(new Setting { Key = "MarketingGoogleReviewsUrl", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingLocationMapUrl"))
+        db.Settings.Add(new Setting { Key = "MarketingLocationMapUrl", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingLocationMapEmbedUrl"))
+        db.Settings.Add(new Setting { Key = "MarketingLocationMapEmbedUrl", Value = "", UpdatedAt = DateTime.UtcNow });
     await db.SaveChangesAsync();
 
     await db.Database.ExecuteSqlRawAsync(@"
@@ -1268,11 +1274,21 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
     var stops = await db.Stops.AsNoTracking().Where(s => s.IsActive).OrderBy(s => s.OrderIndex).ToListAsync(ct);
     var settings = await db.Settings.AsNoTracking().ToDictionaryAsync(s => s.Key, s => s.Value, ct);
 
+    var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+    string? ToAbsolute(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return url;
+        var t = url.Trim();
+        if (t.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || t.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return t;
+        return t.StartsWith('/') ? baseUrl + t : $"{baseUrl}/{t}";
+    }
+
     var tourTitle = tour?.Title ?? "Günlük Tekne Turu";
     var startTime = tour?.StartTime?.ToString("HH:mm");
     var endTime = tour?.EndTime?.ToString("HH:mm");
     var departurePoint = tour?.DeparturePoint;
-    var departureMapUrl = tour?.DepartureMapUrl;
+    var departureMapUrl = ToAbsolute(tour?.DepartureMapUrl);
 
     settings.TryGetValue("MarketingBannerUrl", out var bannerUrl);
     settings.TryGetValue("MarketingServices", out var services);
@@ -1280,13 +1296,18 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
     settings.TryGetValue("MarketingVideoUrl", out var videoUrl);
     settings.TryGetValue("MarketingGalleryJson", out var galleryJson);
     settings.TryGetValue("InstagramUrl", out var instagramUrl);
+    settings.TryGetValue("MarketingGoogleReviewsUrl", out var marketingGoogleReviewsUrl);
+    settings.TryGetValue("GoogleReviewsUrl", out var globalGoogleReviewsUrl);
+    settings.TryGetValue("MarketingLocationMapUrl", out var marketingLocationMapUrl);
+    settings.TryGetValue("MarketingLocationMapEmbedUrl", out var marketingLocationMapEmbedUrl);
+
+    var googleReviewsForPage = string.IsNullOrWhiteSpace(marketingGoogleReviewsUrl) ? globalGoogleReviewsUrl : marketingGoogleReviewsUrl;
 
     var menuPdfTr = await db.Documents.AsNoTracking()
         .Where(d => d.DocType == "menu" && d.Language == "TR")
         .Select(d => d.FileUrl)
         .FirstOrDefaultAsync(ct);
 
-    // Göreli URL kullanıyoruz; böylece frontend (proxy ile) aynı origin'den istek atar, tur görselleri kırılmaz.
     var gallery = new List<MarketingGalleryItemDto>();
     if (!string.IsNullOrWhiteSpace(galleryJson))
     {
@@ -1297,7 +1318,7 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
                 new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
             );
             if (parsed != null)
-                gallery = parsed.Select(g => new MarketingGalleryItemDto(g.Url ?? "", g.Title)).ToList();
+                gallery = parsed.Select(g => new MarketingGalleryItemDto(ToAbsolute(g.Url) ?? "", g.Title)).ToList();
         }
         catch
         {
@@ -1311,14 +1332,17 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
         endTime,
         departurePoint,
         departureMapUrl,
-        stops.Select(s => new LandingStopDto(s.Name, s.Description, s.ImageUrl)).ToList(),
+        stops.Select(s => new LandingStopDto(s.Name, s.Description, ToAbsolute(s.ImageUrl))).ToList(),
         services,
         price,
-        bannerUrl,
+        ToAbsolute(bannerUrl),
         gallery,
         videoUrl,
-        menuPdfTr,
-        instagramUrl
+        ToAbsolute(menuPdfTr),
+        instagramUrl,
+        googleReviewsForPage,
+        marketingLocationMapUrl,
+        marketingLocationMapEmbedUrl
     );
     return Results.Ok(dto);
 }).AllowAnonymous();

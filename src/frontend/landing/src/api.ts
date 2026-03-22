@@ -68,6 +68,10 @@ export type MarketingLandingData = {
   videoUrl: string | null
   barMenuPdfUrl: string | null
   instagramUrl: string | null
+  /** Tanıtım (API güncellemesi sonrası) */
+  googleReviewsUrl?: string | null
+  locationMapUrl?: string | null
+  locationMapEmbedUrl?: string | null
 }
 
 export async function fetchMarketingLandingData(): Promise<MarketingLandingData> {

@@ -2,7 +2,15 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { fetchSettings, updateSettings, uploadFile } from '../api'
 
-const KEYS = ['MarketingBannerUrl', 'MarketingServices', 'MarketingPrice', 'MarketingVideoUrl'] as const
+const KEYS = [
+  'MarketingBannerUrl',
+  'MarketingServices',
+  'MarketingPrice',
+  'MarketingVideoUrl',
+  'MarketingGoogleReviewsUrl',
+  'MarketingLocationMapUrl',
+  'MarketingLocationMapEmbedUrl',
+] as const
 
 type GalleryItem = { url: string; title?: string | null }
 
@@ -155,12 +163,48 @@ export function MarketingSettings() {
         </div>
 
         <div className="form-group">
-          <label>Tur Videosu URL</label>
+          <label>Tur videosu (YouTube linki)</label>
           <input
             value={values.MarketingVideoUrl ?? ''}
             onChange={(e) => setValues((v) => ({ ...v, MarketingVideoUrl: e.target.value }))}
-            placeholder="YouTube linki veya mp4 URL"
+            placeholder="https://www.youtube.com/watch?v=... veya https://youtu.be/..."
           />
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 6 }}>
+            Tanıtım sayfasında gömülü oynatıcı olarak gösterilir.
+          </p>
+        </div>
+
+        <div className="form-group">
+          <label>Google&apos;da yorumlar (link)</label>
+          <input
+            value={values.MarketingGoogleReviewsUrl ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, MarketingGoogleReviewsUrl: e.target.value }))}
+            placeholder="Google arama / işletme yorumları sayfası URL’si"
+          />
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 6 }}>
+            Boşsa, genel ayarlardaki Google yorumları linki kullanılır (varsa).
+          </p>
+        </div>
+
+        <div className="form-group">
+          <label>Konum — haritayı aç (Google Maps linki)</label>
+          <input
+            value={values.MarketingLocationMapUrl ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, MarketingLocationMapUrl: e.target.value }))}
+            placeholder="https://maps.app.goo.gl/... veya maps.google.com linki"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Konum — harita yerleştirme (embed URL, isteğe bağlı)</label>
+          <input
+            value={values.MarketingLocationMapEmbedUrl ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, MarketingLocationMapEmbedUrl: e.target.value }))}
+            placeholder="Google Maps → Paylaş → Harita yerleştir → HTML’deki src=... URL’si"
+          />
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 6 }}>
+            Sayfada harita kutusu göstermek için; sadece kısa link verdiyseniz bu alanı da doldurmanız gerekir.
+          </p>
         </div>
 
         <div className="form-group">

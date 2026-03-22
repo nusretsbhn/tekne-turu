@@ -15,6 +15,9 @@ public record MarketingLandingDto(
     List<MarketingGalleryItemDto> Gallery,
     string? VideoUrl,
     string? BarMenuPdfUrl,
-    string? InstagramUrl
+    string? InstagramUrl,
+    string? GoogleReviewsUrl,
+    string? LocationMapUrl,
+    string? LocationMapEmbedUrl
 );
 
