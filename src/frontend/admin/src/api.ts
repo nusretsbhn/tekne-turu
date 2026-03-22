@@ -565,3 +565,17 @@ export async function updateAgency(
     throw new Error(data?.error ?? 'Güncellenemedi')
   }
 }
+
+export type AgencyRegistrationRow = {
+  fullName: string
+  idNumber: string
+  phone: string | null
+  tourDate: string
+  personCount: number
+  registrationDate: string
+}
+
+export async function fetchAgencyRegistrations(token: string, agencyId: number): Promise<AgencyRegistrationRow[]> {
+  const res = await apiGet(token, `/api/admin/agencies/${agencyId}/registrations`)
+  return res.json()
+}

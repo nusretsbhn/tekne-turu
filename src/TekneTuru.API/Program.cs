@@ -1003,6 +1003,49 @@ adminGroup.MapPut("/agencies/{id:int}", async (int id, CreateAgencyRequest body,
     return Results.Ok(new { id = a.Id });
 });
 
+/// <summary>Seçilen acentanın AgencyName ile eşleşen tüm günlük kayıtları (müşteri satırları).</summary>
+adminGroup.MapGet("/agencies/{id:int}/registrations", async (int id, AppDbContext db, CancellationToken ct) =>
+{
+    var agency = await db.Agencies.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id, ct);
+    if (agency == null) return Results.NotFound();
+    var nameNorm = agency.Name.Trim();
+    var nameLower = nameNorm.ToLowerInvariant();
+
+    var bookings = await db.DailyBookings
+        .AsNoTracking()
+        .Include(b => b.Customer)
+        .Where(b => b.AgencyName != null && b.AgencyName.Trim().ToLower() == nameLower)
+        .OrderByDescending(b => b.TourDate)
+        .ThenByDescending(b => b.Id)
+        .ToListAsync(ct);
+
+    static DateTime TruncateToMinuteUtc(DateTime dt)
+    {
+        var u = dt.Kind == DateTimeKind.Utc ? dt : dt.ToUniversalTime();
+        return new DateTime(u.Year, u.Month, u.Day, u.Hour, u.Minute, 0, DateTimeKind.Utc);
+    }
+
+    var groupCounts = bookings
+        .GroupBy(b => new { b.TourDate, RegMin = TruncateToMinuteUtc(b.Customer.CreatedAt) })
+        .ToDictionary(g => g.Key, g => g.Count());
+
+    var list = bookings.Select(b =>
+    {
+        var key = new { b.TourDate, RegMin = TruncateToMinuteUtc(b.Customer.CreatedAt) };
+        var personCount = groupCounts.TryGetValue(key, out var c) ? c : 1;
+        return new AgencyRegistrationRowDto(
+            b.Customer.FullName ?? "",
+            b.Customer.IdNumber ?? "",
+            b.Customer.Phone,
+            b.TourDate.ToString("yyyy-MM-dd"),
+            personCount,
+            b.Customer.CreatedAt.ToUniversalTime().ToString("o")
+        );
+    }).ToList();
+
+    return Results.Ok(list);
+});
+
 adminGroup.MapGet("/users", async (AppDbContext db, CancellationToken ct) =>
 {
     var list = await db.Users.AsNoTracking()
