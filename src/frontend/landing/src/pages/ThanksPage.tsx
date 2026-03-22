@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { fetchThanksSettings, type ThanksSettings } from '../api'
 
+/** Teşekkür sayfası — Google yorum butonu sabit adres (ayarlardan okunmaz). */
+const GOOGLE_REVIEW_BUTTON_URL = 'https://vikingoludeniz.xyz/landing/thanks'
+
 export function ThanksPage() {
   const [settings, setSettings] = useState<ThanksSettings | null>(null)
   const [loading, setLoading] = useState(true)
@@ -43,17 +46,15 @@ export function ThanksPage() {
         <div style={styles.card}>
           <h2 style={styles.sectionTitle}>Bizi değerlendirin</h2>
           <div style={styles.buttons}>
-            {settings?.googleReviewsUrl && (
-              <a
-                href={settings.googleReviewsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={styles.btn}
-              >
-                <span style={styles.btnIcon}>⭐</span>
-                Google'dan yorum yap
-              </a>
-            )}
+            <a
+              href={GOOGLE_REVIEW_BUTTON_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.btn}
+            >
+              <span style={styles.btnIcon}>⭐</span>
+              Google'dan yorum yap
+            </a>
             {settings?.instagramUrl && (
               <a
                 href={settings.instagramUrl}
@@ -77,9 +78,6 @@ export function ThanksPage() {
               </a>
             )}
           </div>
-          {!settings?.googleReviewsUrl && !settings?.instagramUrl && !settings?.tripAdvisorUrl && (
-            <p style={styles.muted}>Linkler yakında eklenecek.</p>
-          )}
         </div>
       </section>
 
@@ -160,12 +158,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   btnIcon: {
     fontSize: 20,
-  },
-  muted: {
-    textAlign: 'center',
-    color: 'rgba(255,255,255,0.6)',
-    margin: 0,
-    fontSize: 14,
   },
   footer: {
     padding: 32,
