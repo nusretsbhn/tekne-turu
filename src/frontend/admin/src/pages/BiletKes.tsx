@@ -9,6 +9,39 @@ function todayStr() {
   return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0')
 }
 
+/** Tutarı not metninde kullanmak için (örn. 1000 → 1.000 TL) */
+function formatAmountForNoteLine(raw: string): string {
+  const s = raw.trim()
+  if (!s) return ''
+  if (/\s*tl\s*$/i.test(s)) return s
+  const clean = s.replace(/\s/g, '').replace(/\./g, '').replace(',', '.')
+  const num = parseFloat(clean)
+  if (!Number.isFinite(num)) return `${s} TL`
+  const hasDecimals = Math.round(num * 100) % 100 !== 0
+  const formatted = hasDecimals
+    ? num.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : num.toLocaleString('tr-TR', { maximumFractionDigits: 0 })
+  return `${formatted} TL`
+}
+
+function buildNoteWithPayments(
+  total: string,
+  pre: string,
+  remaining: string,
+  freeNote: string,
+): string | undefined {
+  const lines: string[] = []
+  if (total.trim()) lines.push(`Toplam Ödeme: ${formatAmountForNoteLine(total)}`)
+  if (pre.trim()) lines.push(`Ön Ödeme: ${formatAmountForNoteLine(pre)}`)
+  if (remaining.trim()) lines.push(`Kalan Ödeme: ${formatAmountForNoteLine(remaining)}`)
+  const paymentBlock = lines.join('\n')
+  const note = freeNote.trim()
+  if (paymentBlock && note) return `${paymentBlock}\n\n${note}`
+  if (paymentBlock) return paymentBlock
+  if (note) return note
+  return undefined
+}
+
 function formFromPreReservation(pr: PreReservationItem | null | undefined) {
   if (!pr) return null
   return {
@@ -19,6 +52,9 @@ function formFromPreReservation(pr: PreReservationItem | null | undefined) {
     childCount: pr.childCount ?? 0,
     babyCount: pr.babyCount ?? 0,
     hotel: pr.hotelName ?? '',
+    totalPayment: '',
+    prePayment: '',
+    remainingPayment: '',
     note: '',
     hasService: false,
     paymentType: 'ToPay' as const,
@@ -41,6 +77,9 @@ export function BiletKes() {
       childCount: 0,
       babyCount: 0,
       hotel: '',
+      totalPayment: '',
+      prePayment: '',
+      remainingPayment: '',
       note: '',
       hasService: false,
       paymentType: 'ToPay' as 'ToPay' | 'FullPaid' | 'Free',
@@ -78,6 +117,13 @@ export function BiletKes() {
     setSubmitting(true)
     setMessage('')
     try {
+      const noteForTicket = buildNoteWithPayments(
+        form.totalPayment,
+        form.prePayment,
+        form.remainingPayment,
+        form.note,
+      )
+
       const res = await createTicket(token, {
         fullName: form.fullName.trim(),
         phone: form.phone.trim(),
@@ -86,7 +132,7 @@ export function BiletKes() {
         childCount: form.childCount,
         babyCount: form.babyCount,
         hotel: form.hotel.trim() || undefined,
-        note: form.note.trim() || undefined,
+        note: noteForTicket,
         hasService: form.hasService,
         paymentType: form.paymentType,
       })
@@ -104,6 +150,9 @@ export function BiletKes() {
         fullName: '',
         phone: '',
         hotel: '',
+        totalPayment: '',
+        prePayment: '',
+        remainingPayment: '',
         note: '',
         adultCount: 2,
         childCount: 0,
@@ -204,12 +253,50 @@ export function BiletKes() {
           </div>
         </div>
         <div className="form-group">
+          <label>Ödeme tutarları (bilette not alanına yazılır)</label>
+          <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '0 0 8px' }}>
+            Ayrı sütun olarak kaydedilmez; kayıtta ve bilet tasarımında <strong>Not</strong> metninin içine eklenir.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 13 }}>Toplam Ödeme</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={form.totalPayment}
+                onChange={(e) => setForm((f) => ({ ...f, totalPayment: e.target.value }))}
+                placeholder="örn. 1000"
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 13 }}>Ön Ödeme</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={form.prePayment}
+                onChange={(e) => setForm((f) => ({ ...f, prePayment: e.target.value }))}
+                placeholder="örn. 500"
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 13 }}>Kalan Ödeme</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={form.remainingPayment}
+                onChange={(e) => setForm((f) => ({ ...f, remainingPayment: e.target.value }))}
+                placeholder="örn. 500"
+              />
+            </div>
+          </div>
+        </div>
+        <div className="form-group">
           <label>Not</label>
           <textarea
             value={form.note}
             onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
             rows={2}
-            placeholder="İsteğe bağlı not"
+            placeholder="İsteğe bağlı not (ödeme satırlarından sonra eklenir)"
           />
         </div>
         <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
