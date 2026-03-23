@@ -28,7 +28,6 @@ export function MarketingPage() {
     childCount: 0,
     babyCount: 0,
     tourDate: '',
-    useShuttle: false,
   })
   const [submitting, setSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<Screen>('idle')
@@ -59,7 +58,6 @@ export function MarketingPage() {
         childCount: Number(form.childCount) || 0,
         babyCount: Number(form.babyCount) || 0,
         tourDate: form.tourDate,
-        useShuttle: form.useShuttle,
       })
       setSubmitStatus('success')
       setSubmitMessage('Talebiniz alındı, en kısa sürede dönüş yapacağız.')
@@ -426,17 +424,6 @@ export function MarketingPage() {
                   onChange={(e) => setForm((f) => ({ ...f, tourDate: e.target.value }))}
                   required
                 />
-              </div>
-              <div style={{ ...styles.formRow, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  id="useShuttle"
-                  type="checkbox"
-                  checked={form.useShuttle}
-                  onChange={(e) => setForm((f) => ({ ...f, useShuttle: e.target.checked }))}
-                />
-                <label htmlFor="useShuttle" style={{ ...styles.label, marginBottom: 0 }}>
-                  Servis kullanılacak mı?
-                </label>
               </div>
               {submitStatus !== 'idle' && (
                 <p

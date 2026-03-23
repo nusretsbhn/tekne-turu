@@ -103,7 +103,7 @@ export async function submitPreReservation(body: {
   childCount: number
   babyCount: number
   tourDate: string
-  useShuttle: boolean
+  useShuttle?: boolean
 }): Promise<void> {
   const res = await fetch('/api/landing/prereservation', {
     method: 'POST',
