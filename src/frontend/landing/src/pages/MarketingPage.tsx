@@ -91,6 +91,19 @@ export function MarketingPage() {
 
   // Fiyat metninden Yetişkin/Çocuk/Bebek fiyatlarını çıkar (örn: "Yetişkin 2000₺, Çocuk 1000₺, Bebek 0₺")
   const videoEmbedSrc = data.videoUrl ? toYoutubeEmbedUrl(data.videoUrl) : null
+  const placeIdSource = `${data.locationMapUrl ?? ''} ${data.googleReviewsUrl ?? ''}`
+  const placeIdMatch = /placeid=([A-Za-z0-9_-]+)/i.exec(placeIdSource)
+  const placeId = placeIdMatch?.[1] ?? null
+  const mapEmbedSrc = data.locationMapEmbedUrl
+    ? data.locationMapEmbedUrl
+    : placeId
+      ? `https://www.google.com/maps?q=place_id:${placeId}&output=embed`
+      : data.locationMapUrl
+        ? `https://www.google.com/maps?q=${encodeURIComponent(data.locationMapUrl)}&output=embed`
+        : null
+  const directionsUrl = placeId
+    ? `https://www.google.com/maps/dir/?api=1&destination_place_id=${placeId}&travelmode=driving`
+    : data.locationMapUrl
 
   const priceItems: { label: string; price: string }[] = []
   if (data.price) {
@@ -149,12 +162,12 @@ export function MarketingPage() {
                 </a>
               )}
             </div>
-            {(data.locationMapEmbedUrl || data.locationMapUrl) && (
+            {(mapEmbedSrc || data.locationMapUrl) && (
               <div>
-                {data.locationMapEmbedUrl && (
+                {mapEmbedSrc && (
                   <div style={styles.mapWrap}>
                     <iframe
-                      src={data.locationMapEmbedUrl}
+                      src={mapEmbedSrc}
                       title="Konum haritası"
                       style={styles.mapIframe}
                       loading="lazy"
@@ -163,10 +176,10 @@ export function MarketingPage() {
                     />
                   </div>
                 )}
-                {data.locationMapUrl && (
+                {directionsUrl && (
                   <p style={{ marginTop: 12, marginBottom: 0, fontSize: 15 }}>
-                    <a href={data.locationMapUrl} target="_blank" rel="noopener noreferrer" style={styles.linkMap}>
-                      {data.locationMapEmbedUrl ? 'Haritayı Google Maps’te tam ekran aç' : 'Konumu haritada aç'}
+                    <a href={directionsUrl} target="_blank" rel="noopener noreferrer" style={styles.linkMap}>
+                      Yol tarifi al
                     </a>
                   </p>
                 )}
@@ -279,6 +292,11 @@ export function MarketingPage() {
             {data.instagramUrl && (
               <a href={data.instagramUrl} target="_blank" rel="noopener noreferrer" style={styles.secondaryBtn}>
                 Instagram
+              </a>
+            )}
+            {data.tripAdvisorUrl && (
+              <a href={data.tripAdvisorUrl} target="_blank" rel="noopener noreferrer" style={styles.secondaryBtn}>
+                TripAdvisor
               </a>
             )}
           </div>

@@ -1339,6 +1339,7 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
     settings.TryGetValue("MarketingVideoUrl", out var videoUrl);
     settings.TryGetValue("MarketingGalleryJson", out var galleryJson);
     settings.TryGetValue("InstagramUrl", out var instagramUrl);
+    settings.TryGetValue("TripAdvisorUrl", out var tripAdvisorUrl);
     settings.TryGetValue("MarketingGoogleReviewsUrl", out var marketingGoogleReviewsUrl);
     settings.TryGetValue("GoogleReviewsUrl", out var globalGoogleReviewsUrl);
     settings.TryGetValue("MarketingLocationMapUrl", out var marketingLocationMapUrl);
@@ -1383,6 +1384,7 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
         videoUrl,
         ToAbsolute(menuPdfTr),
         instagramUrl,
+        tripAdvisorUrl,
         googleReviewsForPage,
         marketingLocationMapUrl,
         marketingLocationMapEmbedUrl

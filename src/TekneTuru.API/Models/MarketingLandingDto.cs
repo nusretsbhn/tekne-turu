@@ -16,6 +16,7 @@ public record MarketingLandingDto(
     string? VideoUrl,
     string? BarMenuPdfUrl,
     string? InstagramUrl,
+    string? TripAdvisorUrl,
     string? GoogleReviewsUrl,
     string? LocationMapUrl,
     string? LocationMapEmbedUrl

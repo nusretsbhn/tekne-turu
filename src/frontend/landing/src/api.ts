@@ -68,6 +68,7 @@ export type MarketingLandingData = {
   videoUrl: string | null
   barMenuPdfUrl: string | null
   instagramUrl: string | null
+  tripAdvisorUrl?: string | null
   /** Tanıtım (API güncellemesi sonrası) */
   googleReviewsUrl?: string | null
   locationMapUrl?: string | null
