@@ -117,6 +117,9 @@ export function TokenLandingPage() {
   const t = lang === 'tr'
   const menuPdf = t ? data.menuPdfTr : data.menuPdfEn
   const rulesPdf = t ? data.rulesPdfTr : data.rulesPdfEn
+  const heroStyle = data.tour?.imageUrl
+    ? { ...styles.hero, backgroundImage: `url(${data.tour.imageUrl})` }
+    : styles.hero
 
   return (
     <div style={styles.pageWrap}>
@@ -130,7 +133,7 @@ export function TokenLandingPage() {
         </div>
       </header>
 
-      <section style={styles.hero}>
+      <section style={heroStyle}>
         <div style={styles.heroOverlay} aria-hidden />
         <div style={styles.heroContent}>
           <h1 style={styles.heroTitle}>{data.tour?.title ?? (t ? 'Tekne Turu' : 'Boat Tour')}</h1>
