@@ -94,16 +94,27 @@ export function MarketingPage() {
   const placeIdSource = `${data.locationMapUrl ?? ''} ${data.googleReviewsUrl ?? ''}`
   const placeIdMatch = /placeid=([A-Za-z0-9_-]+)/i.exec(placeIdSource)
   const placeId = placeIdMatch?.[1] ?? null
+  const coordMatch = /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(data.locationMapUrl ?? '')
+  const latLng = coordMatch ? `${coordMatch[1]},${coordMatch[2]}` : null
+  const businessQuery = [data.tourTitle, data.departurePoint].filter(Boolean).join(' ').trim()
   const mapEmbedSrc = data.locationMapEmbedUrl
     ? data.locationMapEmbedUrl
     : placeId
       ? `https://www.google.com/maps?q=place_id:${placeId}&output=embed`
-      : data.locationMapUrl
-        ? `https://www.google.com/maps?q=${encodeURIComponent(data.locationMapUrl)}&output=embed`
-        : null
+      : latLng
+        ? `https://www.google.com/maps?output=embed&q=${encodeURIComponent(latLng)}&z=15`
+        : businessQuery
+          ? `https://www.google.com/maps?output=embed&q=${encodeURIComponent(businessQuery)}&z=15`
+          : null
   const directionsUrl = placeId
     ? `https://www.google.com/maps/dir/?api=1&destination_place_id=${placeId}&travelmode=driving`
-    : data.locationMapUrl
+    : latLng
+      ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(latLng)}&travelmode=driving`
+      : data.locationMapUrl
+        ? data.locationMapUrl
+        : businessQuery
+          ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(businessQuery)}&travelmode=driving`
+          : null
 
   const priceItems: { label: string; price: string }[] = []
   if (data.price) {
