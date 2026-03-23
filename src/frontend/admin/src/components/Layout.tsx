@@ -45,6 +45,7 @@ export function Layout() {
     { to: '/sms', label: 'SMS', badge: false, badgeType: 'none' as const },
     { to: '/sms-history', label: 'SMS Geçmişi', badge: false, badgeType: 'none' as const },
     { to: '/feedback', label: 'Dilek / İstek / Şikayet', badge: true, badgeType: 'feedback' as const },
+    { to: '/survey-reports', label: 'Anket Raporları', badge: false, badgeType: 'none' as const },
     { to: '/pre-reservations', label: 'Ön Rezervasyon Talepleri', badge: true, badgeType: 'preres' as const },
     { to: '/marketing-sales', label: 'Pazarlama Satışları', badge: false, badgeType: 'none' as const },
     { to: '/bilet-kes', label: 'Bilet Kes', badge: false, badgeType: 'none' as const },

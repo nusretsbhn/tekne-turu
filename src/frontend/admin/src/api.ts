@@ -306,6 +306,27 @@ export async function fetchFeedbackNewCount(token: string): Promise<{ count: num
   return res.json()
 }
 
+export type SurveyReportByDate = { date: string; count: number }
+export type SurveyTopAnswer = { answer: string; count: number }
+export type SurveyRecentResponse = { id: number; createdAt: string; answersJson: string }
+export type SurveyReportResult = {
+  totalResponses: number
+  byDate: SurveyReportByDate[]
+  topAnswers: SurveyTopAnswer[]
+  recent: SurveyRecentResponse[]
+}
+
+export async function fetchSurveyReports(
+  token: string,
+  opts?: { dateFrom?: string; dateTo?: string },
+): Promise<SurveyReportResult> {
+  const p = new URLSearchParams()
+  if (opts?.dateFrom) p.set('dateFrom', opts.dateFrom)
+  if (opts?.dateTo) p.set('dateTo', opts.dateTo)
+  const res = await apiGet(token, `/api/admin/survey/reports?${p}`)
+  return res.json()
+}
+
 export type UserItem = { id: number; email: string; fullName: string; role: string; isActive: boolean; createdAt: string; lastLoginAt: string | null }
 export async function fetchUsers(token: string): Promise<UserItem[]> {
   const res = await apiGet(token, '/api/admin/users')

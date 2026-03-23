@@ -17,6 +17,7 @@ import { BiletKes } from './pages/BiletKes'
 import { Biletler } from './pages/Biletler'
 import { AcentaKaydi } from './pages/AcentaKaydi'
 import { Acentalar } from './pages/Acentalar'
+import { SurveyReports } from './pages/SurveyReports'
 import { Layout } from './components/Layout'
 import { RequireAuth } from './components/RequireAuth'
 
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="biletler" element={<Biletler />} />
         <Route path="acenta-kaydi" element={<AcentaKaydi />} />
         <Route path="acentalar" element={<Acentalar />} />
+        <Route path="survey-reports" element={<SurveyReports />} />
         <Route path="marketing-settings" element={<MarketingSettings />} />
         <Route path="settings" element={<Settings />} />
       </Route>

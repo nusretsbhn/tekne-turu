@@ -670,6 +670,61 @@ adminGroup.MapGet("/feedback/new-count", async (AppDbContext db, CancellationTok
     var count = await db.Feedbacks.AsNoTracking().CountAsync(f => f.Status == "Yeni", ct);
     return Results.Ok(new { count });
 });
+adminGroup.MapGet("/survey/reports", async (DateOnly? dateFrom, DateOnly? dateTo, AppDbContext db, CancellationToken ct) =>
+{
+    var q = db.ThanksSurveyResponses.AsNoTracking().AsQueryable();
+    if (dateFrom.HasValue)
+        q = q.Where(x => x.CreatedAt >= dateFrom.Value.ToDateTime(TimeOnly.MinValue));
+    if (dateTo.HasValue)
+        q = q.Where(x => x.CreatedAt < dateTo.Value.AddDays(1).ToDateTime(TimeOnly.MinValue));
+
+    var rows = await q.OrderByDescending(x => x.CreatedAt).ToListAsync(ct);
+    var totalResponses = rows.Count;
+
+    var byDate = rows
+        .GroupBy(x => DateOnly.FromDateTime(x.CreatedAt))
+        .OrderByDescending(g => g.Key)
+        .Select(g => new { date = g.Key.ToString("yyyy-MM-dd"), count = g.Count() })
+        .ToList();
+
+    var answerCount = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    foreach (var r in rows)
+    {
+        try
+        {
+            var answers = JsonSerializer.Deserialize<List<string>>(r.AnswersJson ?? "[]") ?? new List<string>();
+            foreach (var a in answers)
+            {
+                var t = (a ?? "").Trim();
+                if (string.IsNullOrWhiteSpace(t)) continue;
+                answerCount[t] = answerCount.GetValueOrDefault(t) + 1;
+            }
+        }
+        catch
+        {
+            // ignore malformed json
+        }
+    }
+
+    var topAnswers = answerCount
+        .OrderByDescending(x => x.Value)
+        .Take(20)
+        .Select(x => new { answer = x.Key, count = x.Value })
+        .ToList();
+
+    var recent = rows
+        .Take(50)
+        .Select(r => new { r.Id, r.CreatedAt, r.AnswersJson })
+        .ToList();
+
+    return Results.Ok(new
+    {
+        totalResponses,
+        byDate,
+        topAnswers,
+        recent
+    });
+});
 adminGroup.MapGet("/feedback", async (DateOnly? dateFrom, DateOnly? dateTo, string? type, AppDbContext db, CancellationToken ct) =>
 {
     IQueryable<Feedback> query = db.Feedbacks.AsNoTracking();
