@@ -4,6 +4,15 @@ import { toYoutubeEmbedUrl } from '../utils/youtubeEmbed'
 
 type Screen = 'idle' | 'success' | 'error'
 
+/** Admin alanına iframe HTML yapıştırılırsa src URL'sini çıkarır. */
+function extractEmbedSrc(input: string | null | undefined): string | null {
+  if (!input?.trim()) return null
+  const raw = input.trim()
+  if (!raw.includes('<iframe')) return raw
+  const m = /src\s*=\s*["']([^"']+)["']/i.exec(raw)
+  return m?.[1] ?? null
+}
+
 export function MarketingPage() {
   const [data, setData] = useState<MarketingLandingData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -97,8 +106,9 @@ export function MarketingPage() {
   const coordMatch = /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(data.locationMapUrl ?? '')
   const latLng = coordMatch ? `${coordMatch[1]},${coordMatch[2]}` : null
   const businessQuery = [data.tourTitle, data.departurePoint].filter(Boolean).join(' ').trim()
-  const mapEmbedSrc = data.locationMapEmbedUrl
-    ? data.locationMapEmbedUrl
+  const embedInput = extractEmbedSrc(data.locationMapEmbedUrl)
+  const mapEmbedSrc = embedInput
+    ? embedInput
     : placeId
       ? `https://www.google.com/maps?q=place_id:${placeId}&output=embed`
       : latLng
