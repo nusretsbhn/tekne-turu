@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
     public DbSet<ShortLinkClick> ShortLinkClicks => Set<ShortLinkClick>();
     public DbSet<PreReservation> PreReservations => Set<PreReservation>();
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
+    public DbSet<ThanksSurveyResponse> ThanksSurveyResponses => Set<ThanksSurveyResponse>();
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<Agency> Agencies => Set<Agency>();
 

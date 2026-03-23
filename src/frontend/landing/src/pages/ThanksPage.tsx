@@ -1,14 +1,38 @@
 import { useState, useEffect } from 'react'
-import { fetchThanksSettings, type ThanksSettings } from '../api'
+import { fetchThanksSettings, submitThanksSurvey, type ThanksSettings } from '../api'
 
 /** Teşekkür sayfası — Google yorum butonu sabit adres (ayarlardan okunmaz). */
 const GOOGLE_REVIEW_BUTTON_URL =
   'https://search.google.com/local/writereview?placeid=ChIJaSIYQ6BoyY8RuqIzhDywwzg'
 
+type SurveyQuestion = {
+  question: string
+  options: string[]
+}
+
+function parseSurvey(json: string | null | undefined): SurveyQuestion[] {
+  if (!json?.trim()) return []
+  try {
+    const arr = JSON.parse(json) as Array<{ question?: string; options?: string[] }>
+    return (Array.isArray(arr) ? arr : [])
+      .map((x) => ({
+        question: (x.question ?? '').trim(),
+        options: (Array.isArray(x.options) ? x.options : []).map((o) => (o ?? '').trim()).filter(Boolean).slice(0, 4),
+      }))
+      .filter((x) => x.question && x.options.length === 4)
+      .slice(0, 5)
+  } catch {
+    return []
+  }
+}
+
 export function ThanksPage() {
   const [settings, setSettings] = useState<ThanksSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [step, setStep] = useState(0)
+  const [answers, setAnswers] = useState<string[]>([])
+  const [surveySaved, setSurveySaved] = useState(false)
 
   useEffect(() => {
     fetchThanksSettings()
@@ -33,6 +57,22 @@ export function ThanksPage() {
     )
   }
 
+  const survey = parseSurvey(settings?.thanksSurveyJson)
+  const hasSurvey = survey.length > 0
+  const surveyCompleted = hasSurvey && step >= survey.length
+
+  useEffect(() => {
+    if (!surveyCompleted) return
+    if (!surveySaved && answers.length > 0) {
+      submitThanksSurvey(answers).catch(() => {})
+      setSurveySaved(true)
+    }
+    const t = setTimeout(() => {
+      window.location.href = GOOGLE_REVIEW_BUTTON_URL
+    }, 1800)
+    return () => clearTimeout(t)
+  }, [surveyCompleted, answers, surveySaved])
+
   return (
     <div style={styles.page}>
       <section style={styles.hero}>
@@ -43,19 +83,59 @@ export function ThanksPage() {
         </p>
       </section>
 
+      {hasSurvey && (
+        <section style={styles.section}>
+          <div style={styles.card}>
+            <h2 style={styles.sectionTitle}>Kısa Anket</h2>
+            {!surveyCompleted && (
+              <>
+                <p style={styles.progressText}>Soru {step + 1} / {survey.length}</p>
+                <p style={styles.questionText}>{survey[step].question}</p>
+                <div style={styles.buttons}>
+                  {survey[step].options.map((opt, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      style={styles.btn}
+                      onClick={() => {
+                        setAnswers((prev) => [...prev, opt])
+                        setStep((s) => s + 1)
+                      }}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            {surveyCompleted && (
+              <>
+                <p style={styles.questionText}>Teşekkür ederiz! Yanıtlarınız alındı.</p>
+                <p style={styles.progressText}>Google yorum sayfasına yönlendiriliyorsunuz...</p>
+                <a href={GOOGLE_REVIEW_BUTTON_URL} style={styles.btn}>
+                  Google'dan yorum yap
+                </a>
+              </>
+            )}
+          </div>
+        </section>
+      )}
+
       <section style={styles.section}>
         <div style={styles.card}>
           <h2 style={styles.sectionTitle}>Bizi değerlendirin</h2>
           <div style={styles.buttons}>
-            <a
-              href={GOOGLE_REVIEW_BUTTON_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={styles.btn}
-            >
-              <span style={styles.btnIcon}>⭐</span>
-              Google'dan yorum yap
-            </a>
+            {!hasSurvey && (
+              <a
+                href={GOOGLE_REVIEW_BUTTON_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={styles.btn}
+              >
+                <span style={styles.btnIcon}>⭐</span>
+                Google'dan yorum yap
+              </a>
+            )}
             {settings?.instagramUrl && (
               <a
                 href={settings.instagramUrl}
@@ -137,6 +217,18 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 18,
     fontWeight: 600,
     textAlign: 'center',
+  },
+  progressText: {
+    margin: '0 0 10px',
+    opacity: 0.85,
+    textAlign: 'center',
+    fontSize: 13,
+  },
+  questionText: {
+    margin: '0 0 14px',
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: 600,
   },
   buttons: {
     display: 'flex',

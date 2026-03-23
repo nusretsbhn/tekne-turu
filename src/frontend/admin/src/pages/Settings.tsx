@@ -12,6 +12,17 @@ const KEYS = [
   'DeskAcentaBaseUrl',
 ] as const
 const THANKS_DESC_KEY = 'ThanksPageDescription'
+const THANKS_SURVEY_KEY = 'ThanksSurveyJson'
+
+type ThanksSurveyQuestion = {
+  question: string
+  options: [string, string, string, string]
+}
+
+const EMPTY_SURVEY: ThanksSurveyQuestion[] = Array.from({ length: 5 }, () => ({
+  question: '',
+  options: ['', '', '', ''],
+}))
 
 const DOC_ENTRIES = [
   { docType: 'menu' as const, language: 'TR' as const, label: 'Bar menüsü (TR)' },
@@ -28,6 +39,7 @@ export function Settings() {
   const { token } = useAuth()
   const [values, setValues] = useState<Record<string, string>>({})
   const [thanksDesc, setThanksDesc] = useState('')
+  const [thanksSurvey, setThanksSurvey] = useState<ThanksSurveyQuestion[]>(EMPTY_SURVEY)
   const [docs, setDocs] = useState<DocumentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [docLoading, setDocLoading] = useState(true)
@@ -42,6 +54,25 @@ export function Settings() {
       const raw = s ?? {}
       setValues(Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v ?? ''])) as Record<string, string>)
       setThanksDesc(raw?.ThanksPageDescription ?? '')
+      try {
+        const parsed = JSON.parse(raw?.ThanksSurveyJson ?? '[]') as Partial<ThanksSurveyQuestion>[]
+        const normalized = EMPTY_SURVEY.map((q, i) => {
+          const src = parsed[i]
+          const opts = Array.isArray(src?.options) ? src!.options as string[] : []
+          return {
+            question: src?.question ?? q.question,
+            options: [
+              opts[0] ?? '',
+              opts[1] ?? '',
+              opts[2] ?? '',
+              opts[3] ?? '',
+            ] as [string, string, string, string],
+          }
+        })
+        setThanksSurvey(normalized)
+      } catch {
+        setThanksSurvey(EMPTY_SURVEY)
+      }
     }).finally(() => setLoading(false))
   }, [token])
 
@@ -131,6 +162,61 @@ export function Settings() {
           />
         </div>
         <button type="submit" disabled={saving} className="btn btn-primary">{saving ? 'Kaydediliyor...' : 'Kaydet'}</button>
+      </form>
+
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault()
+          if (!token) return
+          setSaving(true)
+          setMessage('')
+          const compact = thanksSurvey
+            .map((q) => ({
+              question: q.question.trim(),
+              options: q.options.map((o) => o.trim()).filter(Boolean),
+            }))
+            .filter((q) => q.question && q.options.length === 4)
+          updateSettings(token, { [THANKS_SURVEY_KEY]: JSON.stringify(compact) })
+            .then(() => setMessage('Anket kaydedildi.'))
+            .catch(() => setMessage('Anket kaydedilemedi.'))
+            .finally(() => setSaving(false))
+        }}
+        style={{ maxWidth: 760, marginBottom: 32 }}
+      >
+        <h2 style={{ fontSize: '1.125rem', marginBottom: 12 }}>Teşekkür sayfası anketi (5 soru)</h2>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: 14, marginBottom: 12 }}>
+          Her soru için 4 cevap girin. Sayfada soru soru ilerler; son sorudan sonra teşekkür ve Google yönlendirmesi gösterilir.
+        </p>
+        {thanksSurvey.map((q, i) => (
+          <div key={i} className="card card-md" style={{ marginBottom: 12 }}>
+            <div className="form-group">
+              <label>Soru {i + 1}</label>
+              <input
+                value={q.question}
+                onChange={(e) => setThanksSurvey((prev) => prev.map((x, idx) => (idx === i ? { ...x, question: e.target.value } : x)))}
+                placeholder={`Soru ${i + 1}`}
+              />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {q.options.map((opt, j) => (
+                <div className="form-group" key={j} style={{ marginBottom: 0 }}>
+                  <label>Cevap {j + 1}</label>
+                  <input
+                    value={opt}
+                    onChange={(e) =>
+                      setThanksSurvey((prev) =>
+                        prev.map((x, idx) => (idx === i
+                          ? { ...x, options: x.options.map((o, oi) => (oi === j ? e.target.value : o)) as [string, string, string, string] }
+                          : x)),
+                      )}
+                    placeholder={`Cevap ${j + 1}`}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+        <button type="submit" disabled={saving} className="btn btn-primary">{saving ? 'Kaydediliyor...' : 'Anketi Kaydet'}</button>
       </form>
 
       <section style={{ maxWidth: 560 }}>

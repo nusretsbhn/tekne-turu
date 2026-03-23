@@ -32,6 +32,7 @@ export type ThanksSettings = {
   googleReviewsUrl: string | null
   tripAdvisorUrl: string | null
   thanksPageDescription?: string | null
+  thanksSurveyJson?: string | null
 }
 
 export async function fetchThanksSettings(): Promise<ThanksSettings> {
@@ -49,6 +50,18 @@ export async function submitFeedback(token: string, type: string, message: strin
   if (!res.ok) {
     const data = await res.json().catch(() => ({})) as { error?: string }
     throw new Error(data?.error ?? 'Gönderilemedi.')
+  }
+}
+
+export async function submitThanksSurvey(answers: string[]): Promise<void> {
+  const res = await fetch('/api/landing/thanks-survey', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ answers }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(data?.error ?? 'Anket gönderilemedi.')
   }
 }
 

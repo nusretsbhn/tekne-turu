@@ -247,6 +247,10 @@ if (!string.IsNullOrEmpty(conn))
     {
         db.Settings.Add(new Setting { Key = "ThanksPageDescription", Value = "Deneyiminizi paylaşın — Google, Instagram ve TripAdvisor üzerinden bizi puanlamayı ve takip etmeyi unutmayın.", UpdatedAt = DateTime.UtcNow });
     }
+    if (!await db.Settings.AnyAsync(s => s.Key == "ThanksSurveyJson"))
+    {
+        db.Settings.Add(new Setting { Key = "ThanksSurveyJson", Value = "[]", UpdatedAt = DateTime.UtcNow });
+    }
     if (!await db.Settings.AnyAsync(s => s.Key == "MarketingBannerUrl"))
     {
         db.Settings.Add(new Setting { Key = "MarketingBannerUrl", Value = "", UpdatedAt = DateTime.UtcNow });
@@ -300,6 +304,11 @@ if (!string.IsNullOrEmpty(conn))
             ""Status"" VARCHAR(32) NOT NULL DEFAULT 'Yeni',
             ""CreatedAt"" TIMESTAMP NOT NULL,
             ""ProcessedAt"" TIMESTAMP NULL
+        );
+        CREATE TABLE IF NOT EXISTS ""ThanksSurveyResponses"" (
+            ""Id"" SERIAL PRIMARY KEY,
+            ""CreatedAt"" TIMESTAMP NOT NULL,
+            ""AnswersJson"" TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS ""SmsConsents"" (
             ""Id"" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1266,12 +1275,13 @@ app.MapGet("/api/landing/create-token", async (int bookingId, LandingService lan
 
 app.MapGet("/api/landing/thanks-settings", async (AppDbContext db, CancellationToken ct) =>
 {
-    var dict = await db.Settings.AsNoTracking().Where(s => s.Key == "InstagramUrl" || s.Key == "GoogleReviewsUrl" || s.Key == "TripAdvisorUrl" || s.Key == "ThanksPageDescription").ToDictionaryAsync(s => s.Key, s => s.Value, ct);
+    var dict = await db.Settings.AsNoTracking().Where(s => s.Key == "InstagramUrl" || s.Key == "GoogleReviewsUrl" || s.Key == "TripAdvisorUrl" || s.Key == "ThanksPageDescription" || s.Key == "ThanksSurveyJson").ToDictionaryAsync(s => s.Key, s => s.Value, ct);
     dict.TryGetValue("InstagramUrl", out var instagramUrl);
     dict.TryGetValue("GoogleReviewsUrl", out var googleReviewsUrl);
     dict.TryGetValue("TripAdvisorUrl", out var tripAdvisorUrl);
     dict.TryGetValue("ThanksPageDescription", out var thanksPageDescription);
-    return Results.Ok(new { instagramUrl, googleReviewsUrl, tripAdvisorUrl, thanksPageDescription });
+    dict.TryGetValue("ThanksSurveyJson", out var thanksSurveyJson);
+    return Results.Ok(new { instagramUrl, googleReviewsUrl, tripAdvisorUrl, thanksPageDescription, thanksSurveyJson });
 }).AllowAnonymous();
 
 app.MapGet("/api/agency-by-code", async (string? code, AppDbContext db, CancellationToken ct) =>
@@ -1312,6 +1322,41 @@ app.MapPost("/api/landing/feedback", async (SubmitFeedbackRequest body, LandingS
         BookingId = validated.Value.BookingId,
         Status = "Yeni",
         CreatedAt = DateTime.UtcNow
+    });
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new { success = true });
+}).AllowAnonymous();
+
+app.MapPost("/api/landing/thanks-survey", async (HttpRequest request, AppDbContext db, CancellationToken ct) =>
+{
+    var body = await request.ReadFromJsonAsync<Dictionary<string, object?>>(cancellationToken: ct);
+    if (body == null) return Results.BadRequest(new { error = "Geçersiz istek." });
+
+    if (!body.TryGetValue("answers", out var answersObj) || answersObj == null)
+        return Results.BadRequest(new { error = "answers gerekli." });
+
+    var answers = new List<string>();
+    if (answersObj is JsonElement je && je.ValueKind == JsonValueKind.Array)
+    {
+        foreach (var item in je.EnumerateArray())
+        {
+            var s = item.GetString()?.Trim();
+            if (!string.IsNullOrWhiteSpace(s)) answers.Add(s);
+        }
+    }
+    else if (answersObj is IEnumerable<string> list)
+    {
+        answers = list.Select(x => x?.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Cast<string>().ToList();
+    }
+
+    if (answers.Count == 0)
+        return Results.BadRequest(new { error = "En az bir cevap gerekli." });
+
+    var json = JsonSerializer.Serialize(answers);
+    db.ThanksSurveyResponses.Add(new ThanksSurveyResponse
+    {
+        CreatedAt = DateTime.UtcNow,
+        AnswersJson = json
     });
     await db.SaveChangesAsync(ct);
     return Results.Ok(new { success = true });
