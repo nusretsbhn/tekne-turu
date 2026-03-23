@@ -41,22 +41,6 @@ export function ThanksPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) {
-    return (
-      <div style={styles.page}>
-        <p style={{ textAlign: 'center', padding: '3rem' }}>Yükleniyor...</p>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div style={styles.page}>
-        <p style={{ textAlign: 'center', padding: '3rem', color: '#c00' }}>{error}</p>
-      </div>
-    )
-  }
-
   const survey = parseSurvey(settings?.thanksSurveyJson)
   const hasSurvey = survey.length > 0
   const surveyCompleted = hasSurvey && step >= survey.length
@@ -72,6 +56,22 @@ export function ThanksPage() {
     }, 1800)
     return () => clearTimeout(t)
   }, [surveyCompleted, answers, surveySaved])
+
+  if (loading) {
+    return (
+      <div style={styles.page}>
+        <p style={{ textAlign: 'center', padding: '3rem' }}>Yükleniyor...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={styles.page}>
+        <p style={{ textAlign: 'center', padding: '3rem', color: '#c00' }}>{error}</p>
+      </div>
+    )
+  }
 
   return (
     <div style={styles.page}>
