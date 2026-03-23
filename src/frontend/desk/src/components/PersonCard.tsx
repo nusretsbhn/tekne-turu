@@ -57,6 +57,7 @@ interface PersonCardProps {
 
 export function PersonCard({ person, index, canRemove, expanded, onToggle, onChange, onRemove, tourDate, onTourDateChange }: PersonCardProps) {
   const err = validatePerson(person)
+  const isForeign = person.nationality === 'Diğer'
   const label = person.fullName?.trim() ? `Kişi ${index + 1} – ${person.fullName.trim()}${err ? '' : ' ✓'}` : `Kişi ${index + 1}`
 
   return (
@@ -88,14 +89,31 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
           <div style={styles.row}>
             <div>
               <label style={styles.label}>Uyruk <span style={styles.labelEn}>/ Nationality</span> <span style={styles.required}>*</span></label>
-              <select style={styles.input} value={person.nationality} onChange={(e) => onChange({ nationality: e.target.value as Nationality })}>
+              <select
+                style={styles.input}
+                value={person.nationality}
+                onChange={(e) => {
+                  const nationality = e.target.value as Nationality
+                  onChange({
+                    nationality,
+                    ...(nationality === 'Diğer' ? { idNumber: '', phone: '' } : {}),
+                  })
+                }}
+              >
                 <option value="TR">Türkiye (TC)</option>
                 <option value="Diğer">Diğer (Pasaport)</option>
               </select>
             </div>
             <div>
-              <label style={styles.label}>{person.nationality === 'TR' ? 'TC Kimlik No' : 'Pasaport No'} <span style={styles.labelEn}>/ {person.nationality === 'TR' ? 'Turkish ID No.' : 'Passport No.'}</span> <span style={styles.required}>*</span></label>
-              <input style={styles.input} value={person.idNumber} onChange={(e) => onChange({ idNumber: e.target.value })} placeholder={person.nationality === 'TR' ? '11 haneli' : 'Pasaport no'} required />
+              <label style={styles.label}>{person.nationality === 'TR' ? 'TC Kimlik No' : 'Pasaport No'} <span style={styles.labelEn}>/ {person.nationality === 'TR' ? 'Turkish ID No.' : 'Passport No.'}</span> {!isForeign && <span style={styles.required}>*</span>}</label>
+              <input
+                style={{ ...styles.input, ...(isForeign ? { background: '#f3f4f6', cursor: 'not-allowed' } : {}) }}
+                value={person.idNumber}
+                onChange={(e) => onChange({ idNumber: e.target.value })}
+                placeholder={person.nationality === 'TR' ? '11 haneli' : 'Pasaport no'}
+                required={!isForeign}
+                disabled={isForeign}
+              />
             </div>
           </div>
           <div style={styles.row}>
@@ -154,8 +172,16 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
             </div>
           </div>
           <div style={styles.full}>
-            <label style={styles.label}>Telefon <span style={styles.labelEn}>/ Phone</span> <span style={styles.required}>*</span></label>
-            <input type="tel" style={styles.input} value={person.phone} onChange={(e) => onChange({ phone: e.target.value })} placeholder="5xx xxx xx xx" required />
+            <label style={styles.label}>Telefon <span style={styles.labelEn}>/ Phone</span> {!isForeign && <span style={styles.required}>*</span>}</label>
+            <input
+              type="tel"
+              style={{ ...styles.input, ...(isForeign ? { background: '#f3f4f6', cursor: 'not-allowed' } : {}) }}
+              value={person.phone}
+              onChange={(e) => onChange({ phone: e.target.value })}
+              placeholder="5xx xxx xx xx"
+              required={!isForeign}
+              disabled={isForeign}
+            />
           </div>
           <div style={styles.full}>
             <label style={styles.label}>Konaklama Yeri <span style={styles.labelEn}>/ Accommodation</span></label>

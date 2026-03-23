@@ -51,9 +51,13 @@ public class BookingService
 
         foreach (var p in persons)
         {
-            var idNumber = p.IdNumber.Trim();
-            var customer = await _db.Customers
-                .FirstOrDefaultAsync(c => c.IdNumber == idNumber, ct);
+            var idNumber = (p.IdNumber ?? "").Trim();
+            Customer? customer = null;
+            if (!string.IsNullOrWhiteSpace(idNumber))
+            {
+                customer = await _db.Customers
+                    .FirstOrDefaultAsync(c => c.IdNumber == idNumber, ct);
+            }
 
             if (customer == null)
             {
@@ -318,9 +322,7 @@ public class BookingService
         }
         else
         {
-            if (string.IsNullOrWhiteSpace(p.IdNumber))
-                return $"Kişi {index}: Pasaport numarası giriniz.";
-            if (p.IdNumber.Length > 50)
+            if (!string.IsNullOrWhiteSpace(p.IdNumber) && p.IdNumber.Length > 50)
                 return $"Kişi {index}: Pasaport numarası çok uzun.";
         }
 
