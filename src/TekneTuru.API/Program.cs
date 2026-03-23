@@ -386,7 +386,14 @@ app.UseCors();
 
 // wwwroot ve uploads klasörünü static dosya olarak sun
 app.UseStaticFiles();
-var uploadsRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads");
+var uploadsPathSetting = builder.Configuration["Storage:UploadsPath"];
+var uploadsPathEnv = Environment.GetEnvironmentVariable("UPLOADS_PATH");
+var uploadsRootRaw = !string.IsNullOrWhiteSpace(uploadsPathSetting) ? uploadsPathSetting : uploadsPathEnv;
+var uploadsRoot = string.IsNullOrWhiteSpace(uploadsRootRaw)
+    ? Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads")
+    : (Path.IsPathRooted(uploadsRootRaw)
+        ? uploadsRootRaw
+        : Path.Combine(app.Environment.ContentRootPath, uploadsRootRaw));
 Directory.CreateDirectory(uploadsRoot);
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -1200,9 +1207,8 @@ uploadGroup.MapPost("/", async (HttpRequest request, CancellationToken ct) =>
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (string.IsNullOrEmpty(ext)) ext = ".bin";
         var name = $"{Guid.NewGuid():N}{ext}";
-        var uploadsDir = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads");
-        Directory.CreateDirectory(uploadsDir);
-        var path = Path.Combine(uploadsDir, name);
+        Directory.CreateDirectory(uploadsRoot);
+        var path = Path.Combine(uploadsRoot, name);
         await using (var stream = File.Create(path))
             await file.CopyToAsync(stream, ct);
         return Results.Ok(new { url = $"/uploads/{name}" });
