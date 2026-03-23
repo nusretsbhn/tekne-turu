@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { fetchSurveyReports, type SurveyRecentResponse } from '../api'
+import { fetchSurveyReports, type SurveyQuestionBreakdown, type SurveyRecentResponse } from '../api'
 
 function parseAnswers(json: string): string[] {
   try {
@@ -20,6 +20,7 @@ export function SurveyReports() {
     totalResponses: number
     byDate: { date: string; count: number }[]
     topAnswers: { answer: string; count: number }[]
+    questionBreakdown: SurveyQuestionBreakdown[]
     recent: SurveyRecentResponse[]
   } | null>(null)
 
@@ -103,6 +104,36 @@ export function SurveyReports() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          <div className="card" style={{ marginBottom: 16 }}>
+            <h2 style={{ marginTop: 0, fontSize: 18 }}>Soru bazlı yüzde dağılımı</h2>
+            {(data.questionBreakdown ?? []).map((q) => (
+              <div key={q.questionIndex} style={{ marginBottom: 16 }}>
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                  {q.questionIndex}. {q.question}
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 8 }}>
+                  Yanıtlayan: {q.answeredCount}
+                </div>
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th>Cevap</th><th>Adet</th><th>Yüzde</th></tr></thead>
+                    <tbody>
+                      {q.options.map((opt, i) => (
+                        <tr key={`${q.questionIndex}-${i}-${opt.answer}`}>
+                          <td>{opt.answer}</td>
+                          <td>{opt.count}</td>
+                          <td>%{opt.percentage.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                        </tr>
+                      ))}
+                      {q.options.length === 0 && <tr><td colSpan={3}>Bu soru için kayıt yok.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+            {(data.questionBreakdown ?? []).length === 0 && <p>Kayıt yok.</p>}
           </div>
 
           <div className="card">

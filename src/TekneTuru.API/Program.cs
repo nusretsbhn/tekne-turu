@@ -681,6 +681,28 @@ adminGroup.MapGet("/survey/reports", async (DateOnly? dateFrom, DateOnly? dateTo
     var rows = await q.OrderByDescending(x => x.CreatedAt).ToListAsync(ct);
     var totalResponses = rows.Count;
 
+    var surveyQuestions = new List<string>();
+    var surveySetting = await db.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == "ThanksSurveyJson", ct);
+    if (!string.IsNullOrWhiteSpace(surveySetting?.Value))
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(surveySetting.Value);
+            if (doc.RootElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in doc.RootElement.EnumerateArray())
+                {
+                    var qText = item.TryGetProperty("question", out var qEl) ? (qEl.GetString() ?? "").Trim() : "";
+                    surveyQuestions.Add(qText);
+                }
+            }
+        }
+        catch
+        {
+            // ignore malformed settings json
+        }
+    }
+
     var byDate = rows
         .GroupBy(x => DateOnly.FromDateTime(x.CreatedAt))
         .OrderByDescending(g => g.Key)
@@ -712,6 +734,51 @@ adminGroup.MapGet("/survey/reports", async (DateOnly? dateFrom, DateOnly? dateTo
         .Select(x => new { answer = x.Key, count = x.Value })
         .ToList();
 
+    var parsedAnswers = rows.Select(r =>
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(r.AnswersJson ?? "[]") ?? new List<string>();
+        }
+        catch
+        {
+            return new List<string>();
+        }
+    }).ToList();
+
+    var maxQuestionCount = parsedAnswers.Count > 0 ? parsedAnswers.Max(a => a.Count) : 0;
+    maxQuestionCount = Math.Max(maxQuestionCount, surveyQuestions.Count);
+
+    var questionBreakdown = new List<object>();
+    for (var i = 0; i < maxQuestionCount; i++)
+    {
+        var thisQuestionAnswers = parsedAnswers
+            .Select(a => i < a.Count ? (a[i] ?? "").Trim() : "")
+            .Where(a => !string.IsNullOrWhiteSpace(a))
+            .ToList();
+
+        var answeredCount = thisQuestionAnswers.Count;
+        var grouped = thisQuestionAnswers
+            .GroupBy(a => a, StringComparer.OrdinalIgnoreCase)
+            .Select(g =>
+            {
+                var cnt = g.Count();
+                var pct = answeredCount == 0 ? 0m : Math.Round((decimal)cnt * 100m / answeredCount, 1);
+                return new { answer = g.First(), count = cnt, percentage = pct };
+            })
+            .OrderByDescending(x => x.count)
+            .ToList();
+
+        var qText = i < surveyQuestions.Count ? surveyQuestions[i] : "";
+        questionBreakdown.Add(new
+        {
+            questionIndex = i + 1,
+            question = string.IsNullOrWhiteSpace(qText) ? $"Soru {i + 1}" : qText,
+            answeredCount,
+            options = grouped
+        });
+    }
+
     var recent = rows
         .Take(50)
         .Select(r => new { r.Id, r.CreatedAt, r.AnswersJson })
@@ -722,6 +789,7 @@ adminGroup.MapGet("/survey/reports", async (DateOnly? dateFrom, DateOnly? dateTo
         totalResponses,
         byDate,
         topAnswers,
+        questionBreakdown,
         recent
     });
 });

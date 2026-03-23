@@ -309,10 +309,18 @@ export async function fetchFeedbackNewCount(token: string): Promise<{ count: num
 export type SurveyReportByDate = { date: string; count: number }
 export type SurveyTopAnswer = { answer: string; count: number }
 export type SurveyRecentResponse = { id: number; createdAt: string; answersJson: string }
+export type SurveyQuestionOption = { answer: string; count: number; percentage: number }
+export type SurveyQuestionBreakdown = {
+  questionIndex: number
+  question: string
+  answeredCount: number
+  options: SurveyQuestionOption[]
+}
 export type SurveyReportResult = {
   totalResponses: number
   byDate: SurveyReportByDate[]
   topAnswers: SurveyTopAnswer[]
+  questionBreakdown: SurveyQuestionBreakdown[]
   recent: SurveyRecentResponse[]
 }
 
