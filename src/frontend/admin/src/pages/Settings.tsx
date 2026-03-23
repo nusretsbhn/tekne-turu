@@ -170,12 +170,15 @@ export function Settings() {
           if (!token) return
           setSaving(true)
           setMessage('')
-          const compact = thanksSurvey
-            .map((q) => ({
-              question: q.question.trim(),
-              options: q.options.map((o) => o.trim()).filter(Boolean),
-            }))
-            .filter((q) => q.question && q.options.length === 4)
+          const compact = thanksSurvey.reduce<Array<{ question: string; options: string[] }>>((acc, q) => {
+            const question = q.question.trim()
+            if (!question) return acc
+            const raw = q.options.map((o) => o.trim())
+            // Admin tüm 4 şıkkı doldurmasa bile akış bozulmasın: eksikleri varsayılan metinle tamamla.
+            const options = [0, 1, 2, 3].map((i) => raw[i] || `Seçenek ${i + 1}`)
+            acc.push({ question, options })
+            return acc
+          }, [])
           updateSettings(token, { [THANKS_SURVEY_KEY]: JSON.stringify(compact) })
             .then(() => setMessage('Anket kaydedildi.'))
             .catch(() => setMessage('Anket kaydedilemedi.'))

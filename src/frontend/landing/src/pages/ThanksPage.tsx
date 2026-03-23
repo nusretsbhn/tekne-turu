@@ -17,9 +17,12 @@ function parseSurvey(json: string | null | undefined): SurveyQuestion[] {
     return (Array.isArray(arr) ? arr : [])
       .map((x) => ({
         question: (x.question ?? '').trim(),
-        options: (Array.isArray(x.options) ? x.options : []).map((o) => (o ?? '').trim()).filter(Boolean).slice(0, 4),
+        options: (Array.isArray(x.options) ? x.options : [])
+          .map((o) => (o ?? '').trim())
+          .filter(Boolean)
+          .slice(0, 4),
       }))
-      .filter((x) => x.question && x.options.length === 4)
+      .filter((x) => x.question && x.options.length >= 2)
       .slice(0, 5)
   } catch {
     return []
