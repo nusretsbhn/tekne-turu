@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react'
-import { fetchMarketingLandingData, submitPreReservation, type MarketingLandingData } from '../api'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { fetchMarketingLandingData, type MarketingLandingData } from '../api'
 import { toYoutubeEmbedUrl } from '../utils/youtubeEmbed'
 
 type Lang = 'en' | 'zh-TW'
@@ -8,14 +8,10 @@ type Copy = {
   loading: string
   loadError: string
   otherLangLabel: string
-  tourInfo: string
   departure: string
   ret: string
   departurePoint: string
   viewMap: string
-  preBook: string
-  services: string
-  price: string
   stops: string
   gallery: string
   video: string
@@ -31,21 +27,6 @@ type Copy = {
   instagram: string
   redbook: string
   tripAdvisor: string
-  close: string
-  modalTitle: string
-  modalSubtitle: string
-  fullName: string
-  phone: string
-  email: string
-  hotel: string
-  adult: string
-  child: string
-  baby: string
-  tourDate: string
-  cancel: string
-  send: string
-  sending: string
-  successMsg: string
 }
 
 const COPY: Record<Lang, Copy> = {
@@ -53,21 +34,17 @@ const COPY: Record<Lang, Copy> = {
     loading: 'Loading...',
     loadError: 'Could not load the page.',
     otherLangLabel: '繁體中文',
-    tourInfo: 'Tour information',
     departure: 'Departure',
     ret: 'Return',
     departurePoint: 'Departure point',
     viewMap: 'View on map',
-    preBook: 'Pre-book',
-    services: 'Services',
-    price: 'Tour price',
     stops: 'Stops',
     gallery: 'Tour photos',
     video: 'Tour video',
     barMenu: 'Bar menu',
     boatRules: 'Boat rules',
     openPdf: 'Open PDF',
-    docHint: 'Documents are the same files uploaded in the admin panel.',
+    docHint: 'Same PDF files as uploaded in the admin panel (opens in a new tab).',
     boatLocation: 'Boat location',
     serviceLocation: 'Shuttle / pick-up location',
     directions: 'Directions',
@@ -76,41 +53,22 @@ const COPY: Record<Lang, Copy> = {
     instagram: 'Instagram',
     redbook: 'Redbook',
     tripAdvisor: 'TripAdvisor',
-    close: 'Close',
-    modalTitle: 'Pre-booking request',
-    modalSubtitle: 'Leave your details and we will contact you shortly.',
-    fullName: 'Full name *',
-    phone: 'Phone *',
-    email: 'Email',
-    hotel: 'Hotel',
-    adult: 'Adults',
-    child: 'Children',
-    baby: 'Infants',
-    tourDate: 'Tour date *',
-    cancel: 'Cancel',
-    send: 'Send request',
-    sending: 'Sending...',
-    successMsg: 'Your request was received. We will get back to you soon.',
   },
   'zh-TW': {
     loading: '載入中…',
     loadError: '無法載入頁面。',
     otherLangLabel: 'English',
-    tourInfo: '行程資訊',
     departure: '出發',
     ret: '返回',
     departurePoint: '出發地點',
     viewMap: '查看地圖',
-    preBook: '預約諮詢',
-    services: '服務內容',
-    price: '價格',
     stops: '停靠站',
     gallery: '行程照片',
     video: '行程影片',
     barMenu: '酒吧菜單',
     boatRules: '船上規定',
     openPdf: '開啟 PDF',
-    docHint: '文件與後台系統上傳的 PDF 相同。',
+    docHint: '與後台系統上傳的 PDF 相同（於新分頁開啟）。',
     boatLocation: '乘船地點',
     serviceLocation: '接駁／服務地點',
     directions: '路線導航',
@@ -119,21 +77,6 @@ const COPY: Record<Lang, Copy> = {
     instagram: 'Instagram',
     redbook: '小紅書',
     tripAdvisor: 'TripAdvisor',
-    close: '關閉',
-    modalTitle: '預約諮詢',
-    modalSubtitle: '留下資料，我們將盡快與您聯繫。',
-    fullName: '姓名 *',
-    phone: '電話 *',
-    email: '電子郵件',
-    hotel: '飯店',
-    adult: '成人',
-    child: '兒童',
-    baby: '嬰幼兒',
-    tourDate: '出發日期 *',
-    cancel: '取消',
-    send: '送出',
-    sending: '送出中…',
-    successMsg: '已收到您的需求，我們將盡快回覆。',
   },
 }
 
@@ -181,22 +124,6 @@ export function ChinaGuestPage() {
   const [data, setData] = useState<MarketingLandingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [menuPopupOpen, setMenuPopupOpen] = useState(false)
-  const [rulesPopupOpen, setRulesPopupOpen] = useState(false)
-  const [form, setForm] = useState({
-    fullName: '',
-    phone: '',
-    email: '',
-    hotelName: '',
-    adultCount: 2,
-    childCount: 0,
-    babyCount: 0,
-    tourDate: '',
-  })
-  const [submitting, setSubmitting] = useState(false)
-  const [submitOk, setSubmitOk] = useState(false)
-  const [submitErr, setSubmitErr] = useState('')
 
   useEffect(() => {
     setLoading(true)
@@ -250,48 +177,10 @@ export function ChinaGuestPage() {
   const videoEmbedSrc = data?.videoUrl ? toYoutubeEmbedUrl(data.videoUrl) : null
   const bannerUrl = data ? resolveUrl(data.bannerUrl) || `${window.location.origin}/banner.jpg` : ''
 
-  const priceItems: { label: string; price: string }[] = useMemo(() => {
-    if (!data?.price) return []
-    const items: { label: string; price: string }[] = []
-    const re = /(Yetişkin|Çocuk|Bebek|Adult|Child|Infant)\s*[:\s]*([^,]+)/gi
-    let m: RegExpExecArray | null
-    while ((m = re.exec(data.price)) !== null) {
-      items.push({ label: m[1], price: m[2].trim().replace(/\s+/g, ' ') })
-    }
-    if (items.length === 0) items.push({ label: COPY[lang].price, price: data.price })
-    return items
-  }, [data, lang])
-
   const pageFont =
     lang === 'zh-TW'
       ? '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Heiti TC", sans-serif'
       : 'system-ui, -apple-system, Segoe UI, sans-serif'
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!form.fullName.trim() || !form.phone.trim() || !form.tourDate) return
-    setSubmitting(true)
-    setSubmitOk(false)
-    setSubmitErr('')
-    try {
-      await submitPreReservation({
-        fullName: form.fullName.trim(),
-        phone: form.phone.trim(),
-        email: form.email.trim() || undefined,
-        hotelName: form.hotelName.trim() || undefined,
-        adultCount: Number(form.adultCount) || 0,
-        childCount: Number(form.childCount) || 0,
-        babyCount: Number(form.babyCount) || 0,
-        tourDate: form.tourDate,
-      })
-      setSubmitOk(true)
-      setForm((f) => ({ ...f, fullName: '', phone: '', email: '', hotelName: '' }))
-    } catch (err) {
-      setSubmitErr(err instanceof Error ? err.message : 'Error')
-    } finally {
-      setSubmitting(false)
-    }
-  }
 
   if (loading) {
     return (
@@ -342,39 +231,10 @@ export function ChinaGuestPage() {
               )}
             </p>
           )}
-          <button type="button" style={styles.primaryBtn} onClick={() => setModalOpen(true)}>
-            {t.preBook}
-          </button>
         </div>
       </header>
 
       <main style={styles.main}>
-        {(data.services || data.price) && (
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>{t.tourInfo}</h2>
-          {data.services && <p style={styles.text}>{data.services}</p>}
-          {data.price && (
-            <div style={{ marginTop: 12 }}>
-              <h3 style={styles.subTitle}>{t.price}</h3>
-              {priceItems.length > 1 ? (
-                <div style={styles.priceGrid}>
-                  {priceItems.map((item, i) => (
-                    <div key={i} style={styles.priceCard}>
-                      <span style={styles.priceLabel}>{item.label}</span>
-                      <span style={styles.priceValue}>{item.price}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={styles.priceCardSingle}>
-                  <p style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{data.price}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-        )}
-
         {data.stops.length > 0 && (
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>{t.stops}</h2>
@@ -425,23 +285,35 @@ export function ChinaGuestPage() {
 
         {(data.barMenuPdfUrl || data.rulesPdfUrl) && (
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>{t.barMenu} / {t.boatRules}</h2>
+            <h2 style={styles.sectionTitle}>
+              {t.barMenu} / {t.boatRules}
+            </h2>
             <p style={{ ...styles.text, marginBottom: 12, fontSize: 14, color: '#666' }}>{t.docHint}</p>
             <div style={styles.twoCol}>
               {data.barMenuPdfUrl && (
                 <div style={styles.docCard}>
                   <h3 style={styles.docCardTitle}>{t.barMenu}</h3>
-                  <button type="button" style={styles.primaryBtn} onClick={() => setMenuPopupOpen(true)}>
+                  <a
+                    href={resolveUrl(data.barMenuPdfUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.pdfLink}
+                  >
                     {t.openPdf}
-                  </button>
+                  </a>
                 </div>
               )}
               {data.rulesPdfUrl && (
                 <div style={styles.docCard}>
                   <h3 style={styles.docCardTitle}>{t.boatRules}</h3>
-                  <button type="button" style={styles.primaryBtn} onClick={() => setRulesPopupOpen(true)}>
+                  <a
+                    href={resolveUrl(data.rulesPdfUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.pdfLink}
+                  >
                     {t.openPdf}
-                  </button>
+                  </a>
                 </div>
               )}
             </div>
@@ -450,7 +322,9 @@ export function ChinaGuestPage() {
 
         {(mapBoat.embed || mapService.embed || data.locationMapUrl || data.serviceLocationMapUrl) && (
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>{t.boatLocation} / {t.serviceLocation}</h2>
+            <h2 style={styles.sectionTitle}>
+              {t.boatLocation} / {t.serviceLocation}
+            </h2>
             <div style={styles.twoCol}>
               {(mapBoat.embed || data.locationMapUrl) && (
                 <div style={styles.mapBlock}>
@@ -532,122 +406,6 @@ export function ChinaGuestPage() {
           </section>
         )}
       </main>
-
-      {menuPopupOpen && data.barMenuPdfUrl && (
-        <div style={styles.modalBackdrop} onClick={() => setMenuPopupOpen(false)} role="dialog" aria-modal="true">
-          <div style={styles.menuPopup} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.menuPopupHeader}>
-              <strong>{t.barMenu}</strong>
-              <button type="button" onClick={() => setMenuPopupOpen(false)} style={styles.popupCloseBtn}>
-                {t.close}
-              </button>
-            </div>
-            <iframe title="Bar menu PDF" src={resolveUrl(data.barMenuPdfUrl)} style={styles.menuPopupIframe} />
-          </div>
-        </div>
-      )}
-
-      {rulesPopupOpen && data.rulesPdfUrl && (
-        <div style={styles.modalBackdrop} onClick={() => setRulesPopupOpen(false)} role="dialog" aria-modal="true">
-          <div style={styles.menuPopup} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.menuPopupHeader}>
-              <strong>{t.boatRules}</strong>
-              <button type="button" onClick={() => setRulesPopupOpen(false)} style={styles.popupCloseBtn}>
-                {t.close}
-              </button>
-            </div>
-            <iframe title="Boat rules PDF" src={resolveUrl(data.rulesPdfUrl)} style={styles.menuPopupIframe} />
-          </div>
-        </div>
-      )}
-
-      {modalOpen && (
-        <div style={styles.modalBackdrop} onClick={() => setModalOpen(false)}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0 }}>{t.modalTitle}</h2>
-            <p style={{ marginTop: 0, marginBottom: 16, fontSize: 14, color: '#555' }}>{t.modalSubtitle}</p>
-            <form onSubmit={handleSubmit}>
-              <div style={styles.formRow}>
-                <label style={styles.label}>{t.fullName}</label>
-                <input
-                  style={styles.input}
-                  value={form.fullName}
-                  onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
-                  required
-                />
-              </div>
-              <div style={styles.formRow}>
-                <label style={styles.label}>{t.phone}</label>
-                <input style={styles.input} value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} required />
-              </div>
-              <div style={styles.formRow}>
-                <label style={styles.label}>{t.email}</label>
-                <input type="email" style={styles.input} value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
-              </div>
-              <div style={styles.formRow}>
-                <label style={styles.label}>{t.hotel}</label>
-                <input style={styles.input} value={form.hotelName} onChange={(e) => setForm((f) => ({ ...f, hotelName: e.target.value }))} />
-              </div>
-              <div style={styles.formRowGrid}>
-                <div>
-                  <label style={styles.label}>{t.adult}</label>
-                  <input
-                    type="number"
-                    min={0}
-                    style={styles.input}
-                    value={form.adultCount}
-                    onChange={(e) => setForm((f) => ({ ...f, adultCount: Number(e.target.value) }))}
-                  />
-                </div>
-                <div>
-                  <label style={styles.label}>{t.child}</label>
-                  <input
-                    type="number"
-                    min={0}
-                    style={styles.input}
-                    value={form.childCount}
-                    onChange={(e) => setForm((f) => ({ ...f, childCount: Number(e.target.value) }))}
-                  />
-                </div>
-                <div>
-                  <label style={styles.label}>{t.baby}</label>
-                  <input
-                    type="number"
-                    min={0}
-                    style={styles.input}
-                    value={form.babyCount}
-                    onChange={(e) => setForm((f) => ({ ...f, babyCount: Number(e.target.value) }))}
-                  />
-                </div>
-              </div>
-              <div style={styles.formRow}>
-                <label style={styles.label}>{t.tourDate}</label>
-                <input
-                  type="date"
-                  style={styles.input}
-                  value={form.tourDate}
-                  onChange={(e) => setForm((f) => ({ ...f, tourDate: e.target.value }))}
-                  required
-                />
-              </div>
-              {submitOk && <p style={{ color: '#0a0', fontSize: 14 }}>{t.successMsg}</p>}
-              {submitErr && <p style={{ color: '#c00', fontSize: 14 }}>{submitErr}</p>}
-              <div style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                <button type="button" style={styles.secondaryBtn} onClick={() => setModalOpen(false)}>
-                  {t.cancel}
-                </button>
-                <button
-                  type="submit"
-                  style={{ ...styles.primaryBtn, opacity: submitting ? 0.7 : 1, cursor: submitting ? 'wait' : 'pointer' }}
-                  disabled={submitting}
-                >
-                  {submitting ? t.sending : t.send}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -692,50 +450,11 @@ const styles: Record<string, CSSProperties> = {
   bannerTitle: { margin: 0, fontSize: 32, fontWeight: 700, textShadow: '0 2px 6px rgba(0,0,0,0.6)' },
   bannerSub: { marginTop: 8, fontSize: 16, textShadow: '0 1px 3px rgba(0,0,0,0.5)' },
   linkInline: { color: '#ffd966', textDecoration: 'underline', fontSize: 14 },
-  primaryBtn: {
-    marginTop: 16,
-    padding: '12px 24px',
-    background: '#f97316',
-    color: '#fff',
-    borderRadius: 999,
-    border: 'none',
-    fontSize: 16,
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  secondaryBtn: {
-    padding: '10px 20px',
-    background: '#fff',
-    color: '#1a1a1a',
-    borderRadius: 999,
-    border: '1px solid #ddd',
-    fontSize: 14,
-    fontWeight: 500,
-    cursor: 'pointer',
-  },
   main: { maxWidth: 960, margin: '0 auto', padding: '24px 16px 48px' },
   section: { marginBottom: 28 },
   sectionTitle: { margin: '0 0 12px', fontSize: 22, fontWeight: 600, color: '#1a1a1a' },
   subTitle: { margin: '0 0 8px', fontSize: 16, fontWeight: 600, color: '#333' },
   text: { margin: 0, fontSize: 15, color: '#444', whiteSpace: 'pre-line' as const },
-  priceGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 },
-  priceCard: {
-    background: 'linear-gradient(145deg, #fff 0%, #f8f9fa 100%)',
-    borderRadius: 12,
-    padding: '16px 20px',
-    textAlign: 'center' as const,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-    border: '1px solid rgba(0,0,0,0.06)',
-  },
-  priceLabel: { display: 'block', fontSize: 13, color: '#666', marginBottom: 6 },
-  priceValue: { display: 'block', fontSize: 20, fontWeight: 700, color: '#0f172a' },
-  priceCardSingle: {
-    background: 'linear-gradient(145deg, #fff 0%, #f8f9fa 100%)',
-    borderRadius: 12,
-    padding: '16px 20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-    border: '1px solid rgba(0,0,0,0.06)',
-  },
   stopsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 },
   stopCard: { background: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' },
   stopImg: { width: '100%', height: 140, objectFit: 'cover' },
@@ -761,6 +480,20 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid rgba(0,0,0,0.06)',
   },
   docCardTitle: { margin: '0 0 12px', fontSize: 17, fontWeight: 600 },
+  pdfLink: {
+    display: 'inline-block',
+    marginTop: 0,
+    padding: '12px 24px',
+    background: '#f97316',
+    color: '#fff',
+    borderRadius: 999,
+    border: 'none',
+    fontSize: 16,
+    fontWeight: 600,
+    cursor: 'pointer',
+    textDecoration: 'none',
+    textAlign: 'center' as const,
+  },
   mapBlock: { minWidth: 0 },
   mapWrap: {
     position: 'relative',
@@ -787,62 +520,4 @@ const styles: Record<string, CSSProperties> = {
     textDecoration: 'none',
     boxShadow: '0 1px 2px rgba(60,64,67,.12)',
   },
-  modalBackdrop: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.55)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    zIndex: 1000,
-  },
-  modal: {
-    background: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    maxWidth: 480,
-    width: '100%',
-    boxShadow: '0 8px 28px rgba(0,0,0,0.25)',
-  },
-  formRow: { marginBottom: 10 },
-  formRowGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, marginBottom: 10 },
-  label: { display: 'block', marginBottom: 4, fontSize: 13, fontWeight: 500 },
-  input: {
-    width: '100%',
-    padding: '8px 10px',
-    borderRadius: 8,
-    border: '1px solid #ccc',
-    fontSize: 14,
-    boxSizing: 'border-box' as const,
-  },
-  menuPopup: {
-    background: '#fff',
-    borderRadius: 16,
-    overflow: 'hidden',
-    maxWidth: '95vw',
-    width: 900,
-    maxHeight: '90vh',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
-  },
-  menuPopupHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '12px 16px',
-    background: '#f5f5f5',
-    borderBottom: '1px solid #eee',
-  },
-  popupCloseBtn: {
-    padding: '8px 16px',
-    border: '1px solid #ccc',
-    background: '#fff',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontWeight: 500,
-    fontSize: 14,
-  },
-  menuPopupIframe: { flex: 1, width: '100%', minHeight: 400, border: 'none' },
 }
