@@ -7,11 +7,20 @@ function todayStr() {
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`
 }
 
-const emptyPerson = (): BookingPersonDto => ({
+type AgencyPersonForm = BookingPersonDto & {
+  birthDay: string
+  birthMonth: string
+  birthYear: string
+}
+
+const emptyPerson = (): AgencyPersonForm => ({
   fullName: '',
   idNumber: '',
   nationality: 'TR',
   birthDate: null,
+  birthDay: '',
+  birthMonth: '',
+  birthYear: '',
   ageCategory: 'Yetişkin',
   phone: '',
   email: '',
@@ -20,24 +29,115 @@ const emptyPerson = (): BookingPersonDto => ({
   smsConsent: true,
 })
 
+function digitsOnly(s: string, maxLen: number) {
+  return s.replace(/\D/g, '').slice(0, maxLen)
+}
+
+/** Gün / ay / yıl stringlerinden yyyy-MM-dd; geçersiz takvimde null */
+function toIsoBirthDate(yStr: string, mStr: string, dStr: string): string | null {
+  const y = yStr.trim()
+  const m = mStr.trim()
+  const d = dStr.trim()
+  if (!y || y.length < 4 || !m || !d) return null
+  const yi = Number(y)
+  const mi = Number(m)
+  const di = Number(d)
+  if (!Number.isFinite(yi) || !Number.isFinite(mi) || !Number.isFinite(di)) return null
+  if (mi < 1 || mi > 12 || di < 1 || di > 31) return null
+  const dt = new Date(yi, mi - 1, di)
+  if (dt.getFullYear() !== yi || dt.getMonth() !== mi - 1 || dt.getDate() !== di) return null
+  if (dt > new Date()) return null
+  return `${yi}-${String(mi).padStart(2, '0')}-${String(di).padStart(2, '0')}`
+}
+
+function toBookingDto(p: AgencyPersonForm): BookingPersonDto {
+  const isOther = p.nationality === 'Diğer'
+  const birthDate = toIsoBirthDate(p.birthYear, p.birthMonth, p.birthDay)
+  return {
+    fullName: p.fullName,
+    idNumber: isOther ? '' : p.idNumber.trim(),
+    nationality: p.nationality,
+    birthDate,
+    ageCategory: p.ageCategory,
+    phone: isOther ? null : (p.phone?.trim() || null),
+    email: p.email?.trim() || null,
+    accommodationPlace: p.accommodationPlace?.trim() || null,
+    kvkkConsent: p.kvkkConsent,
+    smsConsent: p.smsConsent,
+  }
+}
+
+function validatePersonForm(p: AgencyPersonForm, index: number): string | null {
+  const i = index + 1
+  if (!p.fullName?.trim() || p.fullName.trim().length < 3) {
+    return `Kişi ${i}: Ad soyad en az 3 karakter olmalıdır.`
+  }
+  if (!p.kvkkConsent) return `Kişi ${i}: KVKK onayı zorunludur.`
+
+  const birthDate = toIsoBirthDate(p.birthYear, p.birthMonth, p.birthDay)
+  if (!birthDate) {
+    return `Kişi ${i}: Geçerli bir doğum tarihi giriniz (gün, ay, yıl).`
+  }
+
+  if (p.nationality === 'TR') {
+    const id = (p.idNumber ?? '').replace(/\s/g, '')
+    if (!id || id.length !== 11 || !/^\d{11}$/.test(id)) {
+      return `Kişi ${i}: TC kimlik numarası 11 haneli rakam olmalıdır.`
+    }
+  } else {
+    const id = (p.idNumber ?? '').trim()
+    if (id.length > 50) return `Kişi ${i}: Pasaport / kimlik numarası çok uzun.`
+  }
+
+  const ageCat = p.ageCategory?.trim() ?? 'Yetişkin'
+  if (!['Yetişkin', 'Çocuk', 'Bebek'].includes(ageCat)) {
+    return `Kişi ${i}: Yaş kategorisi Yetişkin, Çocuk veya Bebek olmalıdır.`
+  }
+
+  const em = (p.email ?? '').trim()
+  if (em && !em.includes('@')) return `Kişi ${i}: Geçerli bir e-posta adresi giriniz.`
+
+  return null
+}
+
 export function AgencyNewPassenger() {
   const { token } = useAuth()
   const [tourDate, setTourDate] = useState(todayStr())
   const [useShuttle, setUseShuttle] = useState(false)
-  const [persons, setPersons] = useState<BookingPersonDto[]>([emptyPerson()])
+  const [persons, setPersons] = useState<AgencyPersonForm[]>([emptyPerson()])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const setPerson = (idx: number, patch: Partial<BookingPersonDto>) =>
+  const setPerson = (idx: number, patch: Partial<AgencyPersonForm>) =>
     setPersons((list) => list.map((p, i) => (i === idx ? { ...p, ...patch } : p)))
+
+  const addPerson = () => {
+    setPersons((list) => {
+      const hotel = list[0]?.accommodationPlace?.trim()
+      const np = emptyPerson()
+      if (hotel) np.accommodationPlace = hotel
+      return [...list, np]
+    })
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!token) return
-    setSaving(true); setError(''); setSuccess('')
+    setSaving(true)
+    setError('')
+    setSuccess('')
+    for (let idx = 0; idx < persons.length; idx++) {
+      const err = validatePersonForm(persons[idx], idx)
+      if (err) {
+        setError(err)
+        setSaving(false)
+        return
+      }
+    }
+    const payload: BookingPersonDto[] = persons.map(toBookingDto)
     try {
-      await createAcentaBooking(token, { tourDate, useShuttle, persons })
+      await createAcentaBooking(token, { tourDate, useShuttle, persons: payload })
       setSuccess('Kayıt başarılı.')
       setPersons([emptyPerson()])
     } catch (err) {
@@ -79,23 +179,119 @@ export function AgencyNewPassenger() {
             </label>
           </div>
         </div>
-        {persons.map((p, i) => (
-          <div key={i} className="card" style={{ marginBottom: 12, border: '1px solid var(--color-border)' }}>
-            <div className="form-row">
-              <div className="form-group"><label>Ad Soyad</label><input value={p.fullName} onChange={(e) => setPerson(i, { fullName: e.target.value })} required /></div>
-              <div className="form-group"><label>Uyruk</label><select value={p.nationality} onChange={(e) => setPerson(i, { nationality: e.target.value })}><option value="TR">TR</option><option value="Diğer">Diğer</option></select></div>
-              <div className="form-group"><label>Kimlik/Pasaport</label><input value={p.idNumber} onChange={(e) => setPerson(i, { idNumber: e.target.value })} /></div>
-              <div className="form-group"><label>Doğum Tarihi</label><input type="date" value={p.birthDate?.slice(0, 10) ?? ''} onChange={(e) => setPerson(i, { birthDate: e.target.value || null })} required /></div>
-              <div className="form-group"><label>Kategori</label><select value={p.ageCategory} onChange={(e) => setPerson(i, { ageCategory: e.target.value })}><option>Yetişkin</option><option>Çocuk</option><option>Bebek</option></select></div>
-              <div className="form-group"><label>Telefon</label><input value={p.phone ?? ''} onChange={(e) => setPerson(i, { phone: e.target.value })} /></div>
-              <div className="form-group"><label>Otel</label><input value={p.accommodationPlace ?? ''} onChange={(e) => setPerson(i, { accommodationPlace: e.target.value })} /></div>
+        {persons.map((p, i) => {
+          const isOther = p.nationality === 'Diğer'
+          return (
+            <div key={i} className="card" style={{ marginBottom: 12, border: '1px solid var(--color-border)' }}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Ad Soyad</label>
+                  <input value={p.fullName} onChange={(e) => setPerson(i, { fullName: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label>Uyruk</label>
+                  <select
+                    value={p.nationality}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      if (v === 'Diğer') {
+                        setPerson(i, { nationality: v, idNumber: '', phone: '' })
+                      } else {
+                        setPerson(i, { nationality: v })
+                      }
+                    }}
+                  >
+                    <option value="TR">TR</option>
+                    <option value="Diğer">Diğer</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>{isOther ? 'Kimlik/Pasaport' : 'TC Kimlik No'}</label>
+                  <input
+                    value={p.idNumber}
+                    onChange={(e) => setPerson(i, { idNumber: isOther ? '' : e.target.value })}
+                    disabled={isOther}
+                    readOnly={isOther}
+                    placeholder={isOther ? 'Diğer uyruk için gerekli değil' : ''}
+                    style={isOther ? { opacity: 0.65, cursor: 'not-allowed' } : undefined}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Doğum tarihi</label>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="bday-day"
+                      placeholder="Gün"
+                      aria-label="Doğum günü"
+                      value={p.birthDay}
+                      onChange={(e) => setPerson(i, { birthDay: digitsOnly(e.target.value, 2) })}
+                      style={{ width: '4.5rem' }}
+                    />
+                    <span aria-hidden>/</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="bday-month"
+                      placeholder="Ay"
+                      aria-label="Doğum ayı"
+                      value={p.birthMonth}
+                      onChange={(e) => setPerson(i, { birthMonth: digitsOnly(e.target.value, 2) })}
+                      style={{ width: '4.5rem' }}
+                    />
+                    <span aria-hidden>/</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="bday-year"
+                      placeholder="Yıl"
+                      aria-label="Doğum yılı"
+                      value={p.birthYear}
+                      onChange={(e) => setPerson(i, { birthYear: digitsOnly(e.target.value, 4) })}
+                      style={{ width: '5.5rem' }}
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Kategori</label>
+                  <select value={p.ageCategory} onChange={(e) => setPerson(i, { ageCategory: e.target.value })}>
+                    <option>Yetişkin</option>
+                    <option>Çocuk</option>
+                    <option>Bebek</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Telefon</label>
+                  <input
+                    value={isOther ? '' : (p.phone ?? '')}
+                    onChange={(e) => setPerson(i, { phone: e.target.value })}
+                    disabled={isOther}
+                    readOnly={isOther}
+                    placeholder={isOther ? 'Diğer uyruk için gerekli değil' : ''}
+                    style={isOther ? { opacity: 0.65, cursor: 'not-allowed' } : undefined}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Otel</label>
+                  <input value={p.accommodationPlace ?? ''} onChange={(e) => setPerson(i, { accommodationPlace: e.target.value })} />
+                </div>
+              </div>
+              {persons.length > 1 && (
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setPersons((list) => list.filter((_, idx) => idx !== i))}>
+                  Kişiyi Sil
+                </button>
+              )}
             </div>
-            {persons.length > 1 && <button type="button" className="btn btn-secondary btn-sm" onClick={() => setPersons((list) => list.filter((_, idx) => idx !== i))}>Kişiyi Sil</button>}
-          </div>
-        ))}
+          )
+        })}
         <div style={{ display: 'flex', gap: 8 }}>
-          <button type="button" className="btn btn-secondary" onClick={() => setPersons((list) => [...list, emptyPerson()])}>Kişi Ekle</button>
-          <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Kaydediliyor...' : 'Kaydet'}</button>
+          <button type="button" className="btn btn-secondary" onClick={addPerson}>
+            Kişi Ekle
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            {saving ? 'Kaydediliyor...' : 'Kaydet'}
+          </button>
         </div>
         {error && <p className="msg-error">{error}</p>}
         {success && <p className="msg-success">{success}</p>}
