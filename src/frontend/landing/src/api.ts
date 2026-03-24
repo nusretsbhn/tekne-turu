@@ -86,6 +86,10 @@ export type MarketingLandingData = {
   googleReviewsUrl?: string | null
   locationMapUrl?: string | null
   locationMapEmbedUrl?: string | null
+  rulesPdfUrl?: string | null
+  serviceLocationMapUrl?: string | null
+  serviceLocationMapEmbedUrl?: string | null
+  redbookUrl?: string | null
 }
 
 export async function fetchMarketingLandingData(): Promise<MarketingLandingData> {

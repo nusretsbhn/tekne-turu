@@ -10,6 +10,9 @@ const KEYS = [
   'MarketingGoogleReviewsUrl',
   'MarketingLocationMapUrl',
   'MarketingLocationMapEmbedUrl',
+  'MarketingServiceLocationMapUrl',
+  'MarketingServiceLocationMapEmbedUrl',
+  'MarketingRedbookUrl',
 ] as const
 
 type GalleryItem = { url: string; title?: string | null }
@@ -205,6 +208,33 @@ export function MarketingSettings() {
           <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 6 }}>
             Sayfada harita kutusu göstermek için; sadece kısa link verdiyseniz bu alanı da doldurmanız gerekir.
           </p>
+        </div>
+
+        <div className="form-group">
+          <label>Servis konumu — haritayı aç (Google Maps linki)</label>
+          <input
+            value={values.MarketingServiceLocationMapUrl ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, MarketingServiceLocationMapUrl: e.target.value }))}
+            placeholder="Çin misafir tanıtım sayfası için servis buluşma noktası"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Servis konumu — embed URL (isteğe bağlı)</label>
+          <input
+            value={values.MarketingServiceLocationMapEmbedUrl ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, MarketingServiceLocationMapEmbedUrl: e.target.value }))}
+            placeholder="Harita yerleştirme src URL’si"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>小紅書 (Redbook) profil veya gönderi linki</label>
+          <input
+            value={values.MarketingRedbookUrl ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, MarketingRedbookUrl: e.target.value }))}
+            placeholder="https://..."
+          />
         </div>
 
         <div className="form-group">

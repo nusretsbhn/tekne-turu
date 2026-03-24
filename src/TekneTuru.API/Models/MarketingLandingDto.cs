@@ -19,6 +19,10 @@ public record MarketingLandingDto(
     string? TripAdvisorUrl,
     string? GoogleReviewsUrl,
     string? LocationMapUrl,
-    string? LocationMapEmbedUrl
+    string? LocationMapEmbedUrl,
+    string? RulesPdfUrl,
+    string? ServiceLocationMapUrl,
+    string? ServiceLocationMapEmbedUrl,
+    string? RedbookUrl
 );
 

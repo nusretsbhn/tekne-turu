@@ -287,6 +287,12 @@ if (!string.IsNullOrEmpty(conn))
         db.Settings.Add(new Setting { Key = "MarketingLocationMapUrl", Value = "", UpdatedAt = DateTime.UtcNow });
     if (!await db.Settings.AnyAsync(s => s.Key == "MarketingLocationMapEmbedUrl"))
         db.Settings.Add(new Setting { Key = "MarketingLocationMapEmbedUrl", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingServiceLocationMapUrl"))
+        db.Settings.Add(new Setting { Key = "MarketingServiceLocationMapUrl", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingServiceLocationMapEmbedUrl"))
+        db.Settings.Add(new Setting { Key = "MarketingServiceLocationMapEmbedUrl", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingRedbookUrl"))
+        db.Settings.Add(new Setting { Key = "MarketingRedbookUrl", Value = "", UpdatedAt = DateTime.UtcNow });
     await db.SaveChangesAsync();
 
     await db.Database.ExecuteSqlRawAsync(@"
@@ -1777,11 +1783,19 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
     settings.TryGetValue("GoogleReviewsUrl", out var globalGoogleReviewsUrl);
     settings.TryGetValue("MarketingLocationMapUrl", out var marketingLocationMapUrl);
     settings.TryGetValue("MarketingLocationMapEmbedUrl", out var marketingLocationMapEmbedUrl);
+    settings.TryGetValue("MarketingServiceLocationMapUrl", out var marketingServiceLocationMapUrl);
+    settings.TryGetValue("MarketingServiceLocationMapEmbedUrl", out var marketingServiceLocationMapEmbedUrl);
+    settings.TryGetValue("MarketingRedbookUrl", out var marketingRedbookUrl);
 
     var googleReviewsForPage = string.IsNullOrWhiteSpace(marketingGoogleReviewsUrl) ? globalGoogleReviewsUrl : marketingGoogleReviewsUrl;
 
     var menuPdfTr = await db.Documents.AsNoTracking()
         .Where(d => d.DocType == "menu" && d.Language == "TR")
+        .Select(d => d.FileUrl)
+        .FirstOrDefaultAsync(ct);
+
+    var rulesPdfTr = await db.Documents.AsNoTracking()
+        .Where(d => d.DocType == "rules" && d.Language == "TR")
         .Select(d => d.FileUrl)
         .FirstOrDefaultAsync(ct);
 
@@ -1820,7 +1834,11 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
         tripAdvisorUrl,
         googleReviewsForPage,
         marketingLocationMapUrl,
-        marketingLocationMapEmbedUrl
+        marketingLocationMapEmbedUrl,
+        ToAbsolute(rulesPdfTr),
+        marketingServiceLocationMapUrl,
+        marketingServiceLocationMapEmbedUrl,
+        marketingRedbookUrl
     );
     return Results.Ok(dto);
 }).AllowAnonymous();
