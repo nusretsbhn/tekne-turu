@@ -20,6 +20,11 @@ import { Acentalar } from './pages/Acentalar'
 import { SurveyReports } from './pages/SurveyReports'
 import { Layout } from './components/Layout'
 import { RequireAuth } from './components/RequireAuth'
+import { RequireRole } from './components/RequireRole'
+import { AgencyDashboard } from './pages/AgencyDashboard'
+import { AgencyNewPassenger } from './pages/AgencyNewPassenger'
+import { AgencyPassengers } from './pages/AgencyPassengers'
+import { AgencySettings } from './pages/AgencySettings'
 
 export default function App() {
   return (
@@ -27,24 +32,28 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
         <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="customers" element={<Customers />} />
-        <Route path="coastguard" element={<CoastGuard />} />
-        <Route path="tour" element={<Tour />} />
-        <Route path="stops" element={<Stops />} />
-        <Route path="sms" element={<Sms />} />
-        <Route path="sms-history" element={<SmsHistory />} />
-        <Route path="feedback" element={<Feedback />} />
-        <Route path="users" element={<Users />} />
-        <Route path="pre-reservations" element={<PreReservations />} />
-        <Route path="marketing-sales" element={<MarketingSales />} />
-        <Route path="bilet-kes" element={<BiletKes />} />
-        <Route path="biletler" element={<Biletler />} />
-        <Route path="acenta-kaydi" element={<AcentaKaydi />} />
-        <Route path="acentalar" element={<Acentalar />} />
-        <Route path="survey-reports" element={<SurveyReports />} />
-        <Route path="marketing-settings" element={<MarketingSettings />} />
-        <Route path="settings" element={<Settings />} />
+        <Route path="dashboard" element={<RequireRole role="Admin"><Dashboard /></RequireRole>} />
+        <Route path="customers" element={<RequireRole role="Admin"><Customers /></RequireRole>} />
+        <Route path="coastguard" element={<RequireRole role="Admin"><CoastGuard /></RequireRole>} />
+        <Route path="tour" element={<RequireRole role="Admin"><Tour /></RequireRole>} />
+        <Route path="stops" element={<RequireRole role="Admin"><Stops /></RequireRole>} />
+        <Route path="sms" element={<RequireRole role="Admin"><Sms /></RequireRole>} />
+        <Route path="sms-history" element={<RequireRole role="Admin"><SmsHistory /></RequireRole>} />
+        <Route path="feedback" element={<RequireRole role="Admin"><Feedback /></RequireRole>} />
+        <Route path="users" element={<RequireRole role="Admin"><Users /></RequireRole>} />
+        <Route path="pre-reservations" element={<RequireRole role="Admin"><PreReservations /></RequireRole>} />
+        <Route path="marketing-sales" element={<RequireRole role="Admin"><MarketingSales /></RequireRole>} />
+        <Route path="bilet-kes" element={<RequireRole role="Admin"><BiletKes /></RequireRole>} />
+        <Route path="biletler" element={<RequireRole role="Admin"><Biletler /></RequireRole>} />
+        <Route path="acenta-kaydi" element={<RequireRole role="Admin"><AcentaKaydi /></RequireRole>} />
+        <Route path="acentalar" element={<RequireRole role="Admin"><Acentalar /></RequireRole>} />
+        <Route path="survey-reports" element={<RequireRole role="Admin"><SurveyReports /></RequireRole>} />
+        <Route path="marketing-settings" element={<RequireRole role="Admin"><MarketingSettings /></RequireRole>} />
+        <Route path="settings" element={<RequireRole role="Admin"><Settings /></RequireRole>} />
+        <Route path="agency/dashboard" element={<RequireRole role="Acenta"><AgencyDashboard /></RequireRole>} />
+        <Route path="agency/new-passenger" element={<RequireRole role="Acenta"><AgencyNewPassenger /></RequireRole>} />
+        <Route path="agency/passengers" element={<RequireRole role="Acenta"><AgencyPassengers /></RequireRole>} />
+        <Route path="agency/settings" element={<RequireRole role="Acenta"><AgencySettings /></RequireRole>} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

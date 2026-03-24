@@ -19,7 +19,7 @@ export function Login() {
     const result = await login(email, password)
     setLoading(false)
     if (result.ok) {
-      navigate('/dashboard')
+      navigate(result.role === 'Acenta' ? '/agency/dashboard' : '/dashboard')
       return
     }
     setError(result.error ?? 'Giriş başarısız.')

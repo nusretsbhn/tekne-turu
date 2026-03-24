@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
@@ -56,6 +57,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization(o =>
 {
     o.AddPolicy("AdminOnly", p => p.RequireRole("Admin"));
+    o.AddPolicy("AcentaOnly", p => p.RequireRole("Acenta"));
 });
 
 builder.Services.AddScoped<AuthService>();
@@ -126,6 +128,9 @@ if (!string.IsNullOrEmpty(conn))
             END IF;
             IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'DailyBookings' AND column_name = 'ServicePickupTime') THEN
                 ALTER TABLE ""DailyBookings"" ADD COLUMN ""ServicePickupTime"" VARCHAR(32) NULL;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Users' AND column_name = 'AgencyId') THEN
+                ALTER TABLE ""Users"" ADD COLUMN ""AgencyId"" INTEGER NULL;
             END IF;
             IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'PreReservations') THEN
                 CREATE TABLE ""PreReservations"" (
@@ -477,6 +482,221 @@ bookingGroup.MapPost("/bulk-check-in", async (BulkCheckInRequest body, BookingSe
         return Results.BadRequest(new { error = "En az bir kayıt seçiniz." });
     var count = await booking.SetCheckInBulkAsync(body.Ids, body.CheckedIn, ct);
     return Results.Ok(new { success = true, count });
+});
+
+var acentaGroup = app.MapGroup("/api/acenta").RequireAuthorization("AcentaOnly");
+acentaGroup.MapGet("/dashboard", async (DateOnly? date, AppDbContext db, HttpContext http, CancellationToken ct) =>
+{
+    var userIdText = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (!int.TryParse(userIdText, out var userId))
+        return Results.Unauthorized();
+
+    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
+    if (user == null || user.AgencyId == null)
+        return Results.BadRequest(new { error = "Acenta hesabı bulunamadı." });
+
+    var agency = await db.Agencies.AsNoTracking().FirstOrDefaultAsync(a => a.Id == user.AgencyId.Value, ct);
+    if (agency == null)
+        return Results.BadRequest(new { error = "Acenta kaydı bulunamadı." });
+
+    var selectedDate = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
+    var agencyLower = agency.Name.Trim().ToLowerInvariant();
+    var todayList = await db.DailyBookings.AsNoTracking()
+        .Include(b => b.Customer)
+        .Where(b => b.AgencyName != null && b.AgencyName.Trim().ToLower() == agencyLower && b.TourDate == selectedDate)
+        .OrderByDescending(b => b.Id)
+        .Take(25)
+        .Select(b => new
+        {
+            b.Id,
+            b.TourDate,
+            b.CheckedIn,
+            b.UseShuttle,
+            FullName = b.Customer.FullName,
+            Phone = b.Customer.Phone,
+            Hotel = b.Customer.AccommodationPlace,
+            CreatedAt = b.Customer.CreatedAt
+        })
+        .ToListAsync(ct);
+
+    var totalPassengerCount = await db.DailyBookings.AsNoTracking()
+        .CountAsync(b => b.AgencyName != null && b.AgencyName.Trim().ToLower() == agencyLower, ct);
+
+    return Results.Ok(new
+    {
+        agencyName = agency.Name,
+        selectedDate,
+        totalPassengerCount,
+        list = todayList
+    });
+});
+acentaGroup.MapPost("/bookings", async (CreateBookingRequest? req, AppDbContext db, BookingService booking, HttpContext http, CancellationToken ct) =>
+{
+    if (req == null || req.Persons == null || req.Persons.Count == 0)
+        return Results.BadRequest(new { error = "En az bir kişi bilgisi gönderilmelidir." });
+
+    var userIdText = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (!int.TryParse(userIdText, out var userId))
+        return Results.Unauthorized();
+
+    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
+    if (user == null || user.AgencyId == null)
+        return Results.BadRequest(new { error = "Acenta hesabı bulunamadı." });
+
+    var agency = await db.Agencies.AsNoTracking().FirstOrDefaultAsync(a => a.Id == user.AgencyId.Value, ct);
+    if (agency == null)
+        return Results.BadRequest(new { error = "Acenta kaydı bulunamadı." });
+
+    var (success, error, ids) = await booking.CreateBookingAsync(req.TourDate, req.Persons, agency.Name, req.UseShuttle ?? false, null, ct);
+    if (!success)
+        return Results.BadRequest(new { error = error ?? "Kayıt işlemi başarısız." });
+    return Results.Ok(new { success = true, bookingIds = ids });
+});
+acentaGroup.MapGet("/passengers", async (
+    DateOnly? dateFrom,
+    DateOnly? dateTo,
+    string? search,
+    bool? useShuttle,
+    int? limit,
+    int? page,
+    AppDbContext db,
+    HttpContext http,
+    CancellationToken ct) =>
+{
+    var userIdText = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (!int.TryParse(userIdText, out var userId))
+        return Results.Unauthorized();
+
+    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
+    if (user == null || user.AgencyId == null)
+        return Results.BadRequest(new { error = "Acenta hesabı bulunamadı." });
+    var agency = await db.Agencies.AsNoTracking().FirstOrDefaultAsync(a => a.Id == user.AgencyId.Value, ct);
+    if (agency == null)
+        return Results.BadRequest(new { error = "Acenta kaydı bulunamadı." });
+
+    var agencyLower = agency.Name.Trim().ToLowerInvariant();
+    var q = db.DailyBookings.AsNoTracking()
+        .Include(b => b.Customer)
+        .Where(b => b.AgencyName != null && b.AgencyName.Trim().ToLower() == agencyLower);
+
+    if (dateFrom.HasValue) q = q.Where(b => b.TourDate >= dateFrom.Value);
+    if (dateTo.HasValue) q = q.Where(b => b.TourDate <= dateTo.Value);
+    if (useShuttle.HasValue) q = q.Where(b => b.UseShuttle == useShuttle.Value);
+    if (!string.IsNullOrWhiteSpace(search))
+    {
+        var s = search.Trim().ToLower();
+        q = q.Where(b =>
+            (b.Customer.FullName != null && b.Customer.FullName.ToLower().Contains(s)) ||
+            (b.Customer.Phone != null && b.Customer.Phone.ToLower().Contains(s)) ||
+            (b.Customer.AccommodationPlace != null && b.Customer.AccommodationPlace.ToLower().Contains(s)));
+    }
+
+    var pageSize = Math.Clamp(limit ?? 25, 1, 100);
+    var pageNumber = Math.Max(1, page ?? 1);
+    var total = await q.CountAsync(ct);
+    var items = await q.OrderByDescending(b => b.TourDate).ThenByDescending(b => b.Id)
+        .Skip((pageNumber - 1) * pageSize)
+        .Take(pageSize)
+        .Select(b => new
+        {
+            b.Id,
+            b.TourDate,
+            b.CheckedIn,
+            b.UseShuttle,
+            b.AgeCategory,
+            FullName = b.Customer.FullName,
+            IdNumber = b.Customer.IdNumber,
+            Nationality = b.Customer.Nationality,
+            BirthDate = b.Customer.BirthDate,
+            Phone = b.Customer.Phone,
+            Email = b.Customer.Email,
+            Hotel = b.Customer.AccommodationPlace,
+            b.Customer.KvkkConsent,
+            b.Customer.SmsConsent,
+            CreatedAt = b.Customer.CreatedAt
+        })
+        .ToListAsync(ct);
+
+    return Results.Ok(new { total, page = pageNumber, pageSize, items });
+});
+acentaGroup.MapPut("/passengers/{bookingId:int}", async (int bookingId, AcentaUpdatePassengerRequest body, AppDbContext db, HttpContext http, CancellationToken ct) =>
+{
+    var userIdText = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (!int.TryParse(userIdText, out var userId))
+        return Results.Unauthorized();
+    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
+    if (user == null || user.AgencyId == null)
+        return Results.BadRequest(new { error = "Acenta hesabı bulunamadı." });
+    var agency = await db.Agencies.AsNoTracking().FirstOrDefaultAsync(a => a.Id == user.AgencyId.Value, ct);
+    if (agency == null)
+        return Results.BadRequest(new { error = "Acenta kaydı bulunamadı." });
+
+    var bookingItem = await db.DailyBookings.Include(b => b.Customer).FirstOrDefaultAsync(b => b.Id == bookingId, ct);
+    if (bookingItem == null) return Results.NotFound();
+    if (!string.Equals(bookingItem.AgencyName?.Trim(), agency.Name.Trim(), StringComparison.OrdinalIgnoreCase))
+        return Results.Forbid();
+    if (bookingItem.TourDate < DateOnly.FromDateTime(DateTime.UtcNow))
+        return Results.BadRequest(new { error = "Tur tarihi geçmiş kayıtlar güncellenemez." });
+
+    bookingItem.TourDate = body.TourDate;
+    bookingItem.UseShuttle = body.UseShuttle;
+    bookingItem.AgeCategory = string.IsNullOrWhiteSpace(body.AgeCategory) ? bookingItem.AgeCategory : body.AgeCategory.Trim();
+    bookingItem.Customer.FullName = string.IsNullOrWhiteSpace(body.FullName) ? bookingItem.Customer.FullName : body.FullName.Trim();
+    bookingItem.Customer.IdNumber = body.IdNumber?.Trim() ?? "";
+    bookingItem.Customer.Nationality = string.IsNullOrWhiteSpace(body.Nationality) ? "TR" : body.Nationality.Trim();
+    bookingItem.Customer.BirthDate = body.BirthDate;
+    bookingItem.Customer.Phone = string.IsNullOrWhiteSpace(body.Phone) ? null : body.Phone.Trim();
+    bookingItem.Customer.Email = string.IsNullOrWhiteSpace(body.Email) ? null : body.Email.Trim();
+    bookingItem.Customer.AccommodationPlace = string.IsNullOrWhiteSpace(body.AccommodationPlace) ? null : body.AccommodationPlace.Trim();
+    bookingItem.Customer.KvkkConsent = body.KvkkConsent;
+    bookingItem.Customer.SmsConsent = body.SmsConsent;
+
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new { success = true });
+});
+acentaGroup.MapDelete("/passengers/{bookingId:int}", async (int bookingId, AppDbContext db, HttpContext http, CancellationToken ct) =>
+{
+    var userIdText = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (!int.TryParse(userIdText, out var userId))
+        return Results.Unauthorized();
+    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
+    if (user == null || user.AgencyId == null)
+        return Results.BadRequest(new { error = "Acenta hesabı bulunamadı." });
+    var agency = await db.Agencies.AsNoTracking().FirstOrDefaultAsync(a => a.Id == user.AgencyId.Value, ct);
+    if (agency == null)
+        return Results.BadRequest(new { error = "Acenta kaydı bulunamadı." });
+
+    var bookingItem = await db.DailyBookings.FirstOrDefaultAsync(b => b.Id == bookingId, ct);
+    if (bookingItem == null) return Results.NotFound();
+    if (!string.Equals(bookingItem.AgencyName?.Trim(), agency.Name.Trim(), StringComparison.OrdinalIgnoreCase))
+        return Results.Forbid();
+    if (bookingItem.TourDate < DateOnly.FromDateTime(DateTime.UtcNow))
+        return Results.BadRequest(new { error = "Tur tarihi geçmiş kayıtlar silinemez." });
+
+    db.DailyBookings.Remove(bookingItem);
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new { success = true });
+});
+acentaGroup.MapPost("/change-password", async (AcentaChangePasswordRequest body, AppDbContext db, HttpContext http, CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(body.CurrentPassword) || string.IsNullOrWhiteSpace(body.NewPassword) || string.IsNullOrWhiteSpace(body.ConfirmNewPassword))
+        return Results.BadRequest(new { error = "Tüm alanları doldurunuz." });
+    if (body.NewPassword.Trim().Length < 6)
+        return Results.BadRequest(new { error = "Yeni şifre en az 6 karakter olmalıdır." });
+    if (body.NewPassword != body.ConfirmNewPassword)
+        return Results.BadRequest(new { error = "Yeni şifreler uyuşmuyor." });
+
+    var userIdText = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (!int.TryParse(userIdText, out var userId))
+        return Results.Unauthorized();
+    var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
+    if (user == null) return Results.NotFound();
+    if (!BCrypt.Net.BCrypt.Verify(body.CurrentPassword, user.PasswordHash))
+        return Results.BadRequest(new { error = "Mevcut şifre hatalı." });
+
+    user.PasswordHash = AuthService.HashPassword(body.NewPassword.Trim());
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new { success = true });
 });
 
 var adminGroup = app.MapGroup("/api/admin").RequireAuthorization("AdminOnly");
@@ -1136,16 +1356,19 @@ adminGroup.MapPost("/agencies", async (CreateAgencyRequest body, AppDbContext db
         ShortCode = shortCode,
         CreatedAt = DateTime.UtcNow
     };
+    db.Agencies.Add(agency);
+    await db.SaveChangesAsync(ct);
+
     var agencyUser = new User
     {
         FullName = body.ContactFullName.Trim(),
+        AgencyId = agency.Id,
         Email = username,
         PasswordHash = AuthService.HashPassword(body.Password.Trim()),
         Role = "Acenta",
         IsActive = true,
         CreatedAt = DateTime.UtcNow
     };
-    db.Agencies.Add(agency);
     db.Users.Add(agencyUser);
     await db.SaveChangesAsync(ct);
     return Results.Ok(new { id = agency.Id, shortCode = agency.ShortCode, name = agency.Name });

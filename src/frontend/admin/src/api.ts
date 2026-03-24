@@ -620,3 +620,127 @@ export async function fetchAgencyRegistrations(token: string, agencyId: number):
   const res = await apiGet(token, `/api/admin/agencies/${agencyId}/registrations`)
   return res.json()
 }
+
+// --- Acenta paneli ---
+export type AcentaDashboardItem = {
+  id: number
+  tourDate: string
+  checkedIn: boolean
+  useShuttle: boolean
+  fullName: string
+  phone: string | null
+  hotel: string | null
+  createdAt: string
+}
+export type AcentaDashboardResult = {
+  agencyName: string
+  selectedDate: string
+  totalPassengerCount: number
+  list: AcentaDashboardItem[]
+}
+export async function fetchAcentaDashboard(token: string, date?: string): Promise<AcentaDashboardResult> {
+  const d = date ?? todayStr()
+  const res = await apiGet(token, `/api/acenta/dashboard?date=${d}`)
+  return res.json()
+}
+
+export type AcentaPassengerRow = {
+  id: number
+  tourDate: string
+  checkedIn: boolean
+  useShuttle: boolean
+  ageCategory: string
+  fullName: string
+  idNumber: string
+  nationality: string
+  birthDate: string | null
+  phone: string | null
+  email: string | null
+  hotel: string | null
+  kvkkConsent: boolean
+  smsConsent: boolean
+  createdAt: string
+}
+export async function fetchAcentaPassengers(
+  token: string,
+  opts: { dateFrom?: string; dateTo?: string; search?: string; useShuttle?: boolean; page?: number; limit?: number }
+): Promise<{ total: number; page: number; pageSize: number; items: AcentaPassengerRow[] }> {
+  const p = new URLSearchParams()
+  if (opts.dateFrom) p.set('dateFrom', opts.dateFrom)
+  if (opts.dateTo) p.set('dateTo', opts.dateTo)
+  if (opts.search) p.set('search', opts.search)
+  if (opts.useShuttle != null) p.set('useShuttle', String(opts.useShuttle))
+  if (opts.page) p.set('page', String(opts.page))
+  if (opts.limit) p.set('limit', String(opts.limit))
+  const res = await apiGet(token, `/api/acenta/passengers?${p}`)
+  return res.json()
+}
+
+export async function createAcentaBooking(
+  token: string,
+  body: { tourDate?: string; persons: BookingPersonDto[]; useShuttle?: boolean }
+): Promise<{ success: boolean; bookingIds: number[] }> {
+  const res = await fetch('/api/acenta/bookings', { method: 'POST', headers: headers(token), body: JSON.stringify(body) })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(data?.error ?? 'Kayıt başarısız')
+  }
+  return res.json()
+}
+
+export async function updateAcentaPassenger(
+  token: string,
+  bookingId: number,
+  body: {
+    tourDate: string
+    fullName: string
+    idNumber: string
+    nationality: string
+    birthDate: string | null
+    ageCategory: string
+    phone?: string | null
+    email?: string | null
+    accommodationPlace?: string | null
+    kvkkConsent: boolean
+    smsConsent: boolean
+    useShuttle: boolean
+  }
+): Promise<void> {
+  const res = await fetch(`/api/acenta/passengers/${bookingId}`, { method: 'PUT', headers: headers(token), body: JSON.stringify(body) })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(data?.error ?? 'Güncellenemedi')
+  }
+}
+
+export async function deleteAcentaPassenger(token: string, bookingId: number): Promise<void> {
+  const res = await fetch(`/api/acenta/passengers/${bookingId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(data?.error ?? 'Silinemedi')
+  }
+}
+
+export async function changeAcentaPassword(
+  token: string,
+  body: { currentPassword: string; newPassword: string; confirmNewPassword: string }
+): Promise<void> {
+  const res = await fetch('/api/acenta/change-password', { method: 'POST', headers: headers(token), body: JSON.stringify(body) })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(data?.error ?? 'Şifre değiştirilemedi')
+  }
+}
+
+export type BookingPersonDto = {
+  fullName: string
+  idNumber: string
+  nationality: string
+  birthDate: string | null
+  ageCategory: string
+  phone?: string | null
+  email?: string | null
+  accommodationPlace?: string | null
+  kvkkConsent: boolean
+  smsConsent: boolean
+}

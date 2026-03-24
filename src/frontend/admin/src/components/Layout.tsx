@@ -26,7 +26,7 @@ export function Layout() {
   }, [])
 
   useEffect(() => {
-    if (!token) return
+    if (!token || user?.role !== 'Admin') return
     fetchFeedbackNewCount(token).then((r) => setFeedbackNewCount(r.count)).catch(() => {})
     fetchPreReservationNewCount(token).then((r) => setPreResNewCount(r.count)).catch(() => {})
     const t = setInterval(() => {
@@ -36,7 +36,7 @@ export function Layout() {
     return () => clearInterval(t)
   }, [token])
 
-  const navLinks = [
+  const adminNavLinks = [
     { to: '/dashboard', label: 'Dashboard', badge: false, badgeType: 'none' as const },
     { to: '/customers', label: 'Müşteriler', badge: false, badgeType: 'none' as const },
     { to: '/coastguard', label: 'Sahil Güvenlik', badge: false, badgeType: 'none' as const },
@@ -56,6 +56,13 @@ export function Layout() {
     { to: '/settings', label: 'Ayarlar', badge: false, badgeType: 'none' as const },
     { to: '/marketing-settings', label: 'Pazarlama Ayarları', badge: false, badgeType: 'none' as const },
   ]
+  const acentaNavLinks = [
+    { to: '/agency/dashboard', label: 'Dashboard', badge: false, badgeType: 'none' as const },
+    { to: '/agency/new-passenger', label: 'Yeni Yolcu Ekle', badge: false, badgeType: 'none' as const },
+    { to: '/agency/passengers', label: 'Yolcular', badge: false, badgeType: 'none' as const },
+    { to: '/agency/settings', label: 'Ayarlar', badge: false, badgeType: 'none' as const },
+  ]
+  const navLinks = user?.role === 'Acenta' ? acentaNavLinks : adminNavLinks
 
   return (
     <div className="app-layout">
@@ -79,7 +86,7 @@ export function Layout() {
             )}
           </span>
         </button>
-        <strong className="app-header-title">Tekne Turu — Admin</strong>
+        <strong className="app-header-title">{user?.role === 'Acenta' ? 'Tekne Turu — Acenta' : 'Tekne Turu — Admin'}</strong>
         <span className="app-header-actions">
           {user && <span className="app-header-user">{user.fullName} ({user.role})</span>}
           <button type="button" onClick={handleLogout} className="btn btn-ghost btn-sm app-header-logout">
