@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { fetchDashboard, fetchServiceList, type DashboardStats, type ServiceListItem } from '../api'
+import jsPDF from 'jspdf'
 
 function todayStr() {
   const t = new Date()
@@ -34,6 +35,62 @@ export function Dashboard() {
     }, 30000)
     return () => clearInterval(t)
   }, [token, date, isToday])
+
+  const exportServiceListPdf = () => {
+    if (serviceList.length === 0) return
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const margin = 10
+    let y = 14
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(14)
+    doc.text('Servis Listesi', margin, y)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.text(`Tarih: ${new Date(serviceListDate + 'T12:00:00').toLocaleDateString('tr-TR')}`, margin, y + 6)
+    y += 14
+
+    const headers = ['Ad Soyad', 'Telefon', 'Otel', 'Kisi', 'Alinis Saati']
+    const colWidths = [70, 45, 90, 20, 45]
+    const rowHeight = 8
+
+    let x = margin
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    headers.forEach((h, i) => {
+      doc.rect(x, y, colWidths[i], rowHeight)
+      doc.text(h, x + 2, y + 5.5)
+      x += colWidths[i]
+    })
+    y += rowHeight
+
+    doc.setFont('helvetica', 'normal')
+    serviceList.forEach((row) => {
+      if (y + rowHeight > 200) {
+        doc.addPage()
+        y = 14
+      }
+      const values = [
+        row.fullName || '—',
+        row.phone || '—',
+        row.hotel || '—',
+        String(row.personCount ?? 0),
+        row.pickupTime || '—',
+      ]
+      let cellX = margin
+      values.forEach((val, i) => {
+        doc.rect(cellX, y, colWidths[i], rowHeight)
+        const maxLen = i === 2 ? 35 : 22
+        const text = val.length > maxLen ? `${val.slice(0, maxLen - 1)}…` : val
+        doc.text(text, cellX + 2, y + 5.5)
+        cellX += colWidths[i]
+      })
+      y += rowHeight
+    })
+
+    const safeDate = serviceListDate.replace(/-/g, '')
+    doc.save(`servis-listesi-${safeDate}.pdf`)
+  }
 
   return (
     <div>
@@ -122,15 +179,34 @@ export function Dashboard() {
             </div>
             <div>
               <h2 style={{ fontSize: '1.125rem', marginBottom: '0.75rem' }}>Servis listesi</h2>
-              <div className="form-group" style={{ marginBottom: 8 }}>
-                <label htmlFor="service-list-date">Tarih</label>
-                <input
-                  id="service-list-date"
-                  type="date"
-                  value={serviceListDate}
-                  onChange={(e) => setServiceListDate(e.target.value)}
-                  style={{ width: 'auto', minWidth: 140 }}
-                />
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 8, flexWrap: 'wrap' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="service-list-date">Tarih</label>
+                  <input
+                    id="service-list-date"
+                    type="date"
+                    value={serviceListDate}
+                    onChange={(e) => setServiceListDate(e.target.value)}
+                    style={{ width: 'auto', minWidth: 140 }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={exportServiceListPdf}
+                  disabled={serviceList.length === 0}
+                  className="btn btn-sm"
+                  style={{
+                    background: '#dc2626',
+                    color: '#fff',
+                    border: '1px solid #b91c1c',
+                    minWidth: 80,
+                    height: 40,
+                    opacity: serviceList.length === 0 ? 0.6 : 1,
+                    cursor: serviceList.length === 0 ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  PDF
+                </button>
               </div>
               <div className="table-wrap" style={{ maxWidth: 520 }}>
                 <table style={{ minWidth: 0 }}>
