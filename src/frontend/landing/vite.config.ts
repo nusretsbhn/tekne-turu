@@ -2,8 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/landing/' : '/',
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/landing/' : '/',
   plugins: [
     react(),
     VitePWA({
@@ -27,4 +27,4 @@ export default defineConfig({
       '/uploads': { target: 'http://localhost:5244', changeOrigin: true },
     },
   },
-})
+}))

@@ -8,9 +8,17 @@ export default function App() {
   return (
     <Routes>
       <Route path="/thanks" element={<ThanksPage />} />
-      <Route path="/tanitim" element={<MarketingPage />} />
       <Route path="/tanitim/cn" element={<ChinaGuestPage />} />
+      <Route path="/tanitim" element={<MarketingPage />} />
       <Route path="/" element={<TokenLandingPage />} />
+      <Route
+        path="*"
+        element={
+          <div style={{ padding: '2rem', textAlign: 'center', fontFamily: 'system-ui, sans-serif' }}>
+            <p style={{ margin: 0, fontSize: 16 }}>Sayfa bulunamadı.</p>
+          </div>
+        }
+      />
     </Routes>
   )
 }
