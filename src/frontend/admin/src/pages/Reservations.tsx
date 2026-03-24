@@ -57,6 +57,7 @@ export function Reservations() {
           agency,
           limit: PAGE_SIZE,
           offset,
+          registrationKayit: true,
         }),
         fetchCustomersCount(token, { dateFrom: df, dateTo: dt, search: s, agency }),
       ])

@@ -65,7 +65,15 @@ export type CustomerListItem = {
   agencyName: string | null
 }
 
-function customerListQueryParams(opts: { dateFrom?: string; dateTo?: string; search?: string; agency?: string; limit?: number; offset?: number }) {
+function customerListQueryParams(opts: {
+  dateFrom?: string
+  dateTo?: string
+  search?: string
+  agency?: string
+  limit?: number
+  offset?: number
+  registrationKayit?: boolean
+}) {
   const p = new URLSearchParams()
   if (opts.dateFrom) p.set('dateFrom', opts.dateFrom)
   if (opts.dateTo) p.set('dateTo', opts.dateTo)
@@ -73,12 +81,21 @@ function customerListQueryParams(opts: { dateFrom?: string; dateTo?: string; sea
   if (opts.agency) p.set('agency', opts.agency)
   if (opts.limit != null) p.set('limit', String(opts.limit))
   if (opts.offset != null) p.set('offset', String(opts.offset))
+  if (opts.registrationKayit) p.set('registrationKayit', 'true')
   return p
 }
 
 export async function fetchCustomers(
   token: string,
-  opts: { dateFrom?: string; dateTo?: string; search?: string; agency?: string; limit?: number; offset?: number }
+  opts: {
+    dateFrom?: string
+    dateTo?: string
+    search?: string
+    agency?: string
+    limit?: number
+    offset?: number
+    registrationKayit?: boolean
+  }
 ): Promise<CustomerListItem[]> {
   const p = customerListQueryParams(opts)
   const res = await apiGet(token, `/api/admin/customers?${p}`)

@@ -123,11 +123,13 @@ public class AdminService
         string? agencyName,
         int limit,
         int offset,
+        bool registrationKayit = false,
         CancellationToken ct = default)
     {
         var query = await GetFilteredCustomersQueryAsync(dateFrom, dateTo, search, agencyName, ct);
         var list = await query
             .OrderByDescending(c => c.CreatedAt)
+            .ThenByDescending(c => c.Id)
             .Skip(offset)
             .Take(limit)
             .ToListAsync(ct);
@@ -156,11 +158,13 @@ public class AdminService
 
         return list.Select(c =>
         {
-            // Kayıt tarihi olarak, filtre aralığındaki ilk tur tarihini baz al;
-            // yoksa müşteri oluşturulma tarihine geri dön.
-            var created = firstTourDateByCustomer.TryGetValue(c.Id, out var td)
-                ? td.ToDateTime(TimeOnly.MinValue)
-                : c.CreatedAt;
+            // Varsayılan: filtre aralığındaki ilk tur tarihini "Kayıt" sütununda göster.
+            // Rezervasyonlar sekmesi: gerçek müşteri kayıt zamanı + buna göre sıra (CreatedAt).
+            var created = registrationKayit
+                ? c.CreatedAt
+                : (firstTourDateByCustomer.TryGetValue(c.Id, out var td)
+                    ? td.ToDateTime(TimeOnly.MinValue)
+                    : c.CreatedAt);
 
             return new CustomerListItemDto(
                 c.Id,
