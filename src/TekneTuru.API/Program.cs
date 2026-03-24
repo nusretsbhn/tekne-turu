@@ -484,23 +484,55 @@ bookingGroup.MapPost("/bulk-check-in", async (BulkCheckInRequest body, BookingSe
     return Results.Ok(new { success = true, count });
 });
 
-var acentaGroup = app.MapGroup("/api/acenta").RequireAuthorization("AcentaOnly");
-acentaGroup.MapGet("/dashboard", async (DateOnly? date, AppDbContext db, HttpContext http, CancellationToken ct) =>
+static async Task<(User? User, Agency? Agency, IResult? Error)> ResolveAcentaContextAsync(AppDbContext db, HttpContext http, CancellationToken ct)
 {
     var userIdText = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
     if (!int.TryParse(userIdText, out var userId))
-        return Results.Unauthorized();
+        return (null, null, Results.Unauthorized());
 
-    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
-    if (user == null || user.AgencyId == null)
-        return Results.BadRequest(new { error = "Acenta hesabı bulunamadı." });
+    var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
+    if (user == null)
+        return (null, null, Results.BadRequest(new { error = "Acenta hesabı bulunamadı." }));
 
-    var agency = await db.Agencies.AsNoTracking().FirstOrDefaultAsync(a => a.Id == user.AgencyId.Value, ct);
-    if (agency == null)
-        return Results.BadRequest(new { error = "Acenta kaydı bulunamadı." });
+    Agency? agency = null;
+    if (user.AgencyId.HasValue)
+    {
+        agency = await db.Agencies.AsNoTracking().FirstOrDefaultAsync(a => a.Id == user.AgencyId.Value, ct);
+        if (agency != null) return (user, agency, null);
+    }
+
+    // Geriye dönük uyumluluk: AgencyId boş eski acenta kullanıcılarını otomatik eşleştir.
+    var fullName = (user.FullName ?? "").Trim().ToLowerInvariant();
+    var email = (user.Email ?? "").Trim().ToLowerInvariant();
+    var matches = await db.Agencies.AsNoTracking()
+        .Where(a =>
+            (!string.IsNullOrWhiteSpace(fullName) && (
+                a.ContactFullName.ToLower() == fullName ||
+                a.Name.ToLower() == fullName
+            )) ||
+            (!string.IsNullOrWhiteSpace(email) && a.Email != null && a.Email.ToLower() == email))
+        .OrderBy(a => a.Id)
+        .Take(2)
+        .ToListAsync(ct);
+
+    if (matches.Count == 1)
+    {
+        user.AgencyId = matches[0].Id;
+        await db.SaveChangesAsync(ct);
+        return (user, matches[0], null);
+    }
+
+    return (user, null, Results.BadRequest(new { error = "Acenta hesabı eşleşmedi. Lütfen admin panelinden acenta-kullanıcı eşlemesini kontrol edin." }));
+}
+
+var acentaGroup = app.MapGroup("/api/acenta").RequireAuthorization("AcentaOnly");
+acentaGroup.MapGet("/dashboard", async (DateOnly? date, AppDbContext db, HttpContext http, CancellationToken ct) =>
+{
+    var (_, agency, err) = await ResolveAcentaContextAsync(db, http, ct);
+    if (err != null) return err;
 
     var selectedDate = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
-    var agencyLower = agency.Name.Trim().ToLowerInvariant();
+    var agencyLower = agency!.Name.Trim().ToLowerInvariant();
     var todayList = await db.DailyBookings.AsNoTracking()
         .Include(b => b.Customer)
         .Where(b => b.AgencyName != null && b.AgencyName.Trim().ToLower() == agencyLower && b.TourDate == selectedDate)
@@ -535,19 +567,10 @@ acentaGroup.MapPost("/bookings", async (CreateBookingRequest? req, AppDbContext 
     if (req == null || req.Persons == null || req.Persons.Count == 0)
         return Results.BadRequest(new { error = "En az bir kişi bilgisi gönderilmelidir." });
 
-    var userIdText = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdText, out var userId))
-        return Results.Unauthorized();
+    var (_, agency, err) = await ResolveAcentaContextAsync(db, http, ct);
+    if (err != null) return err;
 
-    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
-    if (user == null || user.AgencyId == null)
-        return Results.BadRequest(new { error = "Acenta hesabı bulunamadı." });
-
-    var agency = await db.Agencies.AsNoTracking().FirstOrDefaultAsync(a => a.Id == user.AgencyId.Value, ct);
-    if (agency == null)
-        return Results.BadRequest(new { error = "Acenta kaydı bulunamadı." });
-
-    var (success, error, ids) = await booking.CreateBookingAsync(req.TourDate, req.Persons, agency.Name, req.UseShuttle ?? false, null, ct);
+    var (success, error, ids) = await booking.CreateBookingAsync(req.TourDate, req.Persons, agency!.Name, req.UseShuttle ?? false, null, ct);
     if (!success)
         return Results.BadRequest(new { error = error ?? "Kayıt işlemi başarısız." });
     return Results.Ok(new { success = true, bookingIds = ids });
@@ -563,18 +586,9 @@ acentaGroup.MapGet("/passengers", async (
     HttpContext http,
     CancellationToken ct) =>
 {
-    var userIdText = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdText, out var userId))
-        return Results.Unauthorized();
-
-    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
-    if (user == null || user.AgencyId == null)
-        return Results.BadRequest(new { error = "Acenta hesabı bulunamadı." });
-    var agency = await db.Agencies.AsNoTracking().FirstOrDefaultAsync(a => a.Id == user.AgencyId.Value, ct);
-    if (agency == null)
-        return Results.BadRequest(new { error = "Acenta kaydı bulunamadı." });
-
-    var agencyLower = agency.Name.Trim().ToLowerInvariant();
+    var (_, agency, err) = await ResolveAcentaContextAsync(db, http, ct);
+    if (err != null) return err;
+    var agencyLower = agency!.Name.Trim().ToLowerInvariant();
     var q = db.DailyBookings.AsNoTracking()
         .Include(b => b.Customer)
         .Where(b => b.AgencyName != null && b.AgencyName.Trim().ToLower() == agencyLower);
@@ -621,19 +635,12 @@ acentaGroup.MapGet("/passengers", async (
 });
 acentaGroup.MapPut("/passengers/{bookingId:int}", async (int bookingId, AcentaUpdatePassengerRequest body, AppDbContext db, HttpContext http, CancellationToken ct) =>
 {
-    var userIdText = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdText, out var userId))
-        return Results.Unauthorized();
-    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
-    if (user == null || user.AgencyId == null)
-        return Results.BadRequest(new { error = "Acenta hesabı bulunamadı." });
-    var agency = await db.Agencies.AsNoTracking().FirstOrDefaultAsync(a => a.Id == user.AgencyId.Value, ct);
-    if (agency == null)
-        return Results.BadRequest(new { error = "Acenta kaydı bulunamadı." });
+    var (_, agency, err) = await ResolveAcentaContextAsync(db, http, ct);
+    if (err != null) return err;
 
     var bookingItem = await db.DailyBookings.Include(b => b.Customer).FirstOrDefaultAsync(b => b.Id == bookingId, ct);
     if (bookingItem == null) return Results.NotFound();
-    if (!string.Equals(bookingItem.AgencyName?.Trim(), agency.Name.Trim(), StringComparison.OrdinalIgnoreCase))
+    if (!string.Equals(bookingItem.AgencyName?.Trim(), agency!.Name.Trim(), StringComparison.OrdinalIgnoreCase))
         return Results.Forbid();
     if (bookingItem.TourDate < DateOnly.FromDateTime(DateTime.UtcNow))
         return Results.BadRequest(new { error = "Tur tarihi geçmiş kayıtlar güncellenemez." });
@@ -656,19 +663,12 @@ acentaGroup.MapPut("/passengers/{bookingId:int}", async (int bookingId, AcentaUp
 });
 acentaGroup.MapDelete("/passengers/{bookingId:int}", async (int bookingId, AppDbContext db, HttpContext http, CancellationToken ct) =>
 {
-    var userIdText = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (!int.TryParse(userIdText, out var userId))
-        return Results.Unauthorized();
-    var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, ct);
-    if (user == null || user.AgencyId == null)
-        return Results.BadRequest(new { error = "Acenta hesabı bulunamadı." });
-    var agency = await db.Agencies.AsNoTracking().FirstOrDefaultAsync(a => a.Id == user.AgencyId.Value, ct);
-    if (agency == null)
-        return Results.BadRequest(new { error = "Acenta kaydı bulunamadı." });
+    var (_, agency, err) = await ResolveAcentaContextAsync(db, http, ct);
+    if (err != null) return err;
 
     var bookingItem = await db.DailyBookings.FirstOrDefaultAsync(b => b.Id == bookingId, ct);
     if (bookingItem == null) return Results.NotFound();
-    if (!string.Equals(bookingItem.AgencyName?.Trim(), agency.Name.Trim(), StringComparison.OrdinalIgnoreCase))
+    if (!string.Equals(bookingItem.AgencyName?.Trim(), agency!.Name.Trim(), StringComparison.OrdinalIgnoreCase))
         return Results.Forbid();
     if (bookingItem.TourDate < DateOnly.FromDateTime(DateTime.UtcNow))
         return Results.BadRequest(new { error = "Tur tarihi geçmiş kayıtlar silinemez." });
