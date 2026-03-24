@@ -29,7 +29,6 @@ export default function App() {
   const [agencyLoading, setAgencyLoading] = useState(false)
   const [agencyError, setAgencyError] = useState('')
   const [useShuttle, setUseShuttle] = useState(false)
-  const [servicePickupTime, setServicePickupTime] = useState('')
   const [tourDate, setTourDate] = useState<string>(() => new Date().toISOString().slice(0, 10))
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -111,7 +110,7 @@ export default function App() {
     if (!window.confirm(confirmText)) return
     setError('')
     setLoading(true)
-    const result = await createBooking(persons, tourDate, agencyName.trim() || null, useShuttle, servicePickupTime.trim() || null)
+    const result = await createBooking(persons, tourDate, agencyName.trim() || null, useShuttle)
     setLoading(false)
     if (result.success) {
       setScreen('thankyou')
@@ -119,7 +118,7 @@ export default function App() {
     } else {
       setError(result.error ?? 'Kayıt gönderilemedi.')
     }
-  }, [persons, agencyName, tourDate, useShuttle, servicePickupTime])
+  }, [persons, agencyName, tourDate, useShuttle])
 
   if (screen === 'start') {
     const hasAgencyParam = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('agency')?.trim()
@@ -188,18 +187,6 @@ export default function App() {
           />
           <span style={{ fontWeight: 500 }}>Servis <span style={{ fontSize: 12, color: '#888', fontWeight: 400 }}>/ Transfer</span></span>
         </label>
-        {useShuttle && (
-          <div style={{ marginLeft: 24, marginTop: 6 }}>
-            <label style={{ display: 'block', marginBottom: 4, fontWeight: 500, fontSize: 14 }}>Alınış saati <span style={{ fontSize: 12, color: '#888', fontWeight: 400 }}>/ Pickup time</span></label>
-            <input
-              type="text"
-              placeholder="Örn: 09:00"
-              value={servicePickupTime}
-              onChange={(e) => setServicePickupTime(e.target.value)}
-              style={{ ...styles.agencyInput, maxWidth: 120 }}
-            />
-          </div>
-        )}
       </div>
       {(!valid || !agencyName.trim()) && persons.length > 0 && <p style={styles.error}>Zorunlu alanları doldurunuz. / Please fill in required fields.</p>}
       {error && <p style={styles.error}>{error}</p>}

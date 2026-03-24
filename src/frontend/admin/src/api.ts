@@ -596,11 +596,12 @@ export async function updateAgency(
 }
 
 export type AgencyRegistrationRow = {
-  fullName: string
-  idNumber: string
-  phone: string | null
   tourDate: string
+  fullName: string
+  phone: string | null
   personCount: number
+  hotel: string | null
+  useShuttle: boolean
   registrationDate: string
 }
 

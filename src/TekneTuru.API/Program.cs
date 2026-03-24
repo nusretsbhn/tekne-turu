@@ -1178,11 +1178,12 @@ adminGroup.MapGet("/agencies/{id:int}/registrations", async (int id, AppDbContex
         var key = new { b.TourDate, RegMin = TruncateToMinuteUtc(b.Customer.CreatedAt) };
         var personCount = groupCounts.TryGetValue(key, out var c) ? c : 1;
         return new AgencyRegistrationRowDto(
-            b.Customer.FullName ?? "",
-            b.Customer.IdNumber ?? "",
-            b.Customer.Phone,
             b.TourDate.ToString("yyyy-MM-dd"),
+            b.Customer.FullName ?? "",
+            b.Customer.Phone,
             personCount,
+            string.IsNullOrWhiteSpace(b.Customer.AccommodationPlace) ? null : b.Customer.AccommodationPlace,
+            b.UseShuttle,
             b.Customer.CreatedAt.ToUniversalTime().ToString("o")
         );
     }).ToList();
