@@ -565,7 +565,7 @@ export async function fetchAgency(token: string, id: number): Promise<AgencyItem
 
 export async function createAgency(
   token: string,
-  body: { name: string; contactFullName: string; phone: string; email?: string },
+  body: { name: string; contactFullName: string; phone: string; email?: string; username: string; password: string },
 ): Promise<{ id: number; shortCode: string; name: string }> {
   const res = await fetch('/api/admin/agencies', {
     method: 'POST',
@@ -592,6 +592,17 @@ export async function updateAgency(
   if (!res.ok) {
     const data = await res.json().catch(() => ({})) as { error?: string }
     throw new Error(data?.error ?? 'Güncellenemedi')
+  }
+}
+
+export async function deleteAgency(token: string, id: number): Promise<void> {
+  const res = await fetch(`/api/admin/agencies/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(data?.error ?? 'Silinemedi')
   }
 }
 

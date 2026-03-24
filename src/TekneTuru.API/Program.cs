@@ -1116,6 +1116,12 @@ adminGroup.MapPost("/agencies", async (CreateAgencyRequest body, AppDbContext db
     if (string.IsNullOrWhiteSpace(body?.Name)) return Results.BadRequest(new { error = "Acenta adı giriniz." });
     if (string.IsNullOrWhiteSpace(body.ContactFullName)) return Results.BadRequest(new { error = "Yetkili ad soyad giriniz." });
     if (string.IsNullOrWhiteSpace(body.Phone)) return Results.BadRequest(new { error = "Telefon giriniz." });
+    if (string.IsNullOrWhiteSpace(body.Username)) return Results.BadRequest(new { error = "Kullanıcı adı giriniz." });
+    if (string.IsNullOrWhiteSpace(body.Password) || body.Password.Trim().Length < 6)
+        return Results.BadRequest(new { error = "Şifre en az 6 karakter olmalıdır." });
+    var username = body.Username.Trim();
+    if (await db.Users.AnyAsync(u => u.Email.ToLower() == username.ToLower(), ct))
+        return Results.BadRequest(new { error = "Bu kullanıcı adı zaten kullanılıyor." });
     string shortCode = GenerateAgencyShortCode();
     for (int i = 0; i < 20 && await db.Agencies.AnyAsync(a => a.ShortCode == shortCode, ct); i++)
         shortCode = GenerateAgencyShortCode();
@@ -1130,11 +1136,21 @@ adminGroup.MapPost("/agencies", async (CreateAgencyRequest body, AppDbContext db
         ShortCode = shortCode,
         CreatedAt = DateTime.UtcNow
     };
+    var agencyUser = new User
+    {
+        FullName = body.ContactFullName.Trim(),
+        Email = username,
+        PasswordHash = AuthService.HashPassword(body.Password.Trim()),
+        Role = "Acenta",
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow
+    };
     db.Agencies.Add(agency);
+    db.Users.Add(agencyUser);
     await db.SaveChangesAsync(ct);
     return Results.Ok(new { id = agency.Id, shortCode = agency.ShortCode, name = agency.Name });
 });
-adminGroup.MapPut("/agencies/{id:int}", async (int id, CreateAgencyRequest body, AppDbContext db, CancellationToken ct) =>
+adminGroup.MapPut("/agencies/{id:int}", async (int id, UpdateAgencyRequest body, AppDbContext db, CancellationToken ct) =>
 {
     var a = await db.Agencies.FindAsync(new object[] { id }, ct);
     if (a == null) return Results.NotFound();
@@ -1145,6 +1161,20 @@ adminGroup.MapPut("/agencies/{id:int}", async (int id, CreateAgencyRequest body,
     a.UpdatedAt = DateTime.UtcNow;
     await db.SaveChangesAsync(ct);
     return Results.Ok(new { id = a.Id });
+});
+adminGroup.MapDelete("/agencies/{id:int}", async (int id, AppDbContext db, CancellationToken ct) =>
+{
+    var a = await db.Agencies.FindAsync(new object[] { id }, ct);
+    if (a == null) return Results.NotFound();
+
+    var hasBooking = await db.DailyBookings.AsNoTracking()
+        .AnyAsync(b => b.AgencyName != null && b.AgencyName.Trim().ToLower() == a.Name.Trim().ToLower(), ct);
+    if (hasBooking)
+        return Results.BadRequest(new { error = "Bu acentaya ait kayıtlar bulunduğu için silinemez." });
+
+    db.Agencies.Remove(a);
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new { id });
 });
 
 /// <summary>Seçilen acentanın AgencyName ile eşleşen tüm günlük kayıtları (müşteri satırları).</summary>

@@ -6,7 +6,7 @@ const CHECKIN_URL = import.meta.env.VITE_CHECKIN_URL ?? (typeof window !== 'unde
 
 export function Login() {
   const navigate = useNavigate()
-  const { login, logout } = useAuth()
+  const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -18,13 +18,8 @@ export function Login() {
     setLoading(true)
     const result = await login(email, password)
     setLoading(false)
-    if (result.ok && result.role === 'Admin') {
+    if (result.ok) {
       navigate('/dashboard')
-      return
-    }
-    if (result.ok && result.role !== 'Admin') {
-      logout()
-      setError('Bu panele sadece Admin girişi yapabilir. Check-in ekranı için aşağıdaki bağlantıyı kullanın.')
       return
     }
     setError(result.error ?? 'Giriş başarısız.')
@@ -46,14 +41,14 @@ export function Login() {
       )}
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="login-email">E-posta</label>
+          <label htmlFor="login-email">Kullanıcı Adı / E-posta</label>
           <input
             id="login-email"
-            type="email"
+            type="text"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            autoComplete="email"
+            autoComplete="username"
           />
         </div>
         <div className="form-group">

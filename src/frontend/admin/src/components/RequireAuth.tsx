@@ -12,7 +12,8 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   if (user && user.role !== 'Admin') {
     return (
       <div style={{ padding: '3rem 2rem', textAlign: 'center', maxWidth: 400, margin: '4rem auto' }}>
-        <p style={{ color: '#c00', marginBottom: '1rem' }}>Bu panele sadece Admin girişi yapabilir.</p>
+        <p style={{ color: '#1a1a1a', marginBottom: '1rem' }}>Acenta hesabı ile giriş yapıldı.</p>
+        <p style={{ color: '#666', marginBottom: '1rem' }}>Acenta kullanıcı sekmeleri yakında eklenecek.</p>
         <p style={{ marginBottom: '1rem' }}>Check-in ekranı için:</p>
         <a href={CHECKIN_URL} style={{ display: 'inline-block', marginBottom: '1rem', color: '#1a1a1a', fontWeight: 600 }}>Check-in sayfasına git →</a>
         <br />

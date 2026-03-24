@@ -22,9 +22,10 @@ public class AuthService
 
     public async Task<LoginResponse?> LoginAsync(string email, string password, CancellationToken ct = default)
     {
+        var emailOrUsername = (email ?? "").Trim();
         var user = await _db.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Email == email && u.IsActive, ct);
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == emailOrUsername.ToLower() && u.IsActive, ct);
         if (user == null) return null;
 
         if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
