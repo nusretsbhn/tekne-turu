@@ -25,8 +25,6 @@ const COAST_GUARD_FORM = {
   captainTc: '',
   sailor1: '',
   sailor1Tc: '',
-  sailor2: '',
-  sailor2Tc: '',
   captainContact: '',
   tourName: 'ÖLÜDENİZ KELEBEKLER VADİSİ TEKNE TURU',
 } as const
@@ -81,12 +79,6 @@ function coastGuardHeaderHtml(tourDateFormatted: string): string {
       <td class="cg-val">${escapeHtml(f.sailor1)}</td>
       <td class="cg-lab">GEMİCİ T.C</td>
       <td class="cg-val">${escapeHtml(f.sailor1Tc)}</td>
-    </tr>
-    <tr>
-      <td class="cg-lab">GEMİCİ</td>
-      <td class="cg-val">${escapeHtml(f.sailor2)}</td>
-      <td class="cg-lab">GEMİCİ T.C</td>
-      <td class="cg-val">${escapeHtml(f.sailor2Tc)}</td>
     </tr>
   </table>
   <table class="cg-table cg-tour" style="margin-top:-1px">
@@ -178,12 +170,6 @@ function CoastGuardFormHeader({ tourDateFormatted }: { tourDateFormatted: string
             <td style={val}>{f.sailor1 || '\u00A0'}</td>
             <td style={lab}>GEMİCİ T.C</td>
             <td style={val}>{f.sailor1Tc || '\u00A0'}</td>
-          </tr>
-          <tr>
-            <td style={lab}>GEMİCİ</td>
-            <td style={val}>{f.sailor2 || '\u00A0'}</td>
-            <td style={lab}>GEMİCİ T.C</td>
-            <td style={val}>{f.sailor2Tc || '\u00A0'}</td>
           </tr>
         </tbody>
       </table>
