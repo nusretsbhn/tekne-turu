@@ -57,8 +57,26 @@ export function AgencyNewPassenger() {
             <input type="date" value={tourDate} onChange={(e) => setTourDate(e.target.value)} required />
           </div>
           <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input id="service-check" type="checkbox" checked={useShuttle} onChange={(e) => setUseShuttle(e.target.checked)} />
-            <label htmlFor="service-check" style={{ marginBottom: 0 }}>Servis kullanılacak</label>
+            <label htmlFor="service-check" style={{ marginBottom: 0, display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                id="service-check"
+                type="checkbox"
+                checked={useShuttle}
+                onChange={(e) => setUseShuttle(e.target.checked)}
+                style={{
+                  width: 18,
+                  height: 18,
+                  minWidth: 18,
+                  minHeight: 18,
+                  margin: 0,
+                  padding: 0,
+                  appearance: 'auto',
+                  WebkitAppearance: 'checkbox',
+                  cursor: 'pointer',
+                }}
+              />
+              Servis kullanılacak
+            </label>
           </div>
         </div>
         {persons.map((p, i) => (
