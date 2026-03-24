@@ -76,6 +76,7 @@ public class AdminService
         DateOnly? dateTo,
         string? search,
         string? agencyName,
+        bool withBookingsOnly,
         CancellationToken ct)
     {
         var query = _db.Customers.AsNoTracking();
@@ -89,6 +90,16 @@ public class AdminService
                 bookingQuery = bookingQuery.Where(b => b.AgencyName != null && b.AgencyName.Trim() == agency);
             }
             var ids = await bookingQuery.Select(b => b.CustomerId).Distinct().ToListAsync(ct);
+            if (ids.Count == 0)
+                return query.Where(c => false);
+            query = query.Where(c => ids.Contains(c.Id));
+        }
+        else if (withBookingsOnly)
+        {
+            var ids = await _db.DailyBookings.AsNoTracking()
+                .Select(b => b.CustomerId)
+                .Distinct()
+                .ToListAsync(ct);
             if (ids.Count == 0)
                 return query.Where(c => false);
             query = query.Where(c => ids.Contains(c.Id));
@@ -110,9 +121,10 @@ public class AdminService
         DateOnly? dateTo,
         string? search,
         string? agencyName,
+        bool withBookingsOnly = false,
         CancellationToken ct = default)
     {
-        var query = await GetFilteredCustomersQueryAsync(dateFrom, dateTo, search, agencyName, ct);
+        var query = await GetFilteredCustomersQueryAsync(dateFrom, dateTo, search, agencyName, withBookingsOnly, ct);
         return await query.CountAsync(ct);
     }
 
@@ -124,9 +136,10 @@ public class AdminService
         int limit,
         int offset,
         bool registrationKayit = false,
+        bool withBookingsOnly = false,
         CancellationToken ct = default)
     {
-        var query = await GetFilteredCustomersQueryAsync(dateFrom, dateTo, search, agencyName, ct);
+        var query = await GetFilteredCustomersQueryAsync(dateFrom, dateTo, search, agencyName, withBookingsOnly, ct);
         var list = await query
             .OrderByDescending(c => c.CreatedAt)
             .ThenByDescending(c => c.Id)

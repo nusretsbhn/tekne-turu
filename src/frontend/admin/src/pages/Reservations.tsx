@@ -4,32 +4,34 @@ import { useAuth } from '../contexts/AuthContext'
 import { fetchCustomers, fetchCustomersCount, type CustomerListItem } from '../api'
 import { CustomerListFilters } from '../components/CustomerListFilters'
 
-function todayStr() {
-  const t = new Date()
-  return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0')
-}
-
 const PAGE_SIZE = 25
 
-function resolveListParams(dateFrom: string, dateTo: string, search: string, today: string) {
+/** Rezervasyonlar: Boş arama + boş tarihler → API’ye tarih gönderilmez; gelecek tur tarihli acenta kayıtları da listelenir. */
+function resolveListParams(dateFrom: string, dateTo: string, search: string) {
   const trimmedSearch = search.trim()
-  const hasCustomDate = !!dateFrom || dateTo !== today
-  const useDateFilter = hasCustomDate || !trimmedSearch
-  const dateFromParam = useDateFilter ? (dateFrom || undefined) : undefined
-  const dateToParam = useDateFilter ? (dateTo || undefined) : undefined
-  return {
-    dateFrom: dateFromParam,
-    dateTo: dateToParam,
-    search: trimmedSearch || undefined,
+  const df = dateFrom.trim()
+  const dt = dateTo.trim()
+  const hasExplicitDateRange = !!df || !!dt
+
+  if (trimmedSearch) {
+    if (hasExplicitDateRange) {
+      return { dateFrom: df || undefined, dateTo: dt || undefined, search: trimmedSearch }
+    }
+    return { dateFrom: undefined, dateTo: undefined, search: trimmedSearch }
   }
+
+  if (hasExplicitDateRange) {
+    return { dateFrom: df || undefined, dateTo: dt || undefined, search: undefined }
+  }
+
+  return { dateFrom: undefined, dateTo: undefined, search: undefined }
 }
 
 export function Reservations() {
   const { token } = useAuth()
   const navigate = useNavigate()
-  const today = todayStr()
   const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState(today)
+  const [dateTo, setDateTo] = useState('')
   const [search, setSearch] = useState('')
   const [agencyFilter, setAgencyFilter] = useState('')
   const [page, setPage] = useState(1)
@@ -44,7 +46,7 @@ export function Reservations() {
       const pageNum = opts?.page ?? page
       const effFrom = opts?.dateFrom ?? dateFrom
       const effTo = opts?.dateTo ?? dateTo
-      const { dateFrom: df, dateTo: dt, search: s } = resolveListParams(effFrom, effTo, search, today)
+      const { dateFrom: df, dateTo: dt, search: s } = resolveListParams(effFrom, effTo, search)
       const agency = agencyFilter?.trim() || undefined
       setLoading(true)
       setError('')
@@ -58,8 +60,9 @@ export function Reservations() {
           limit: PAGE_SIZE,
           offset,
           registrationKayit: true,
+          withBookingsOnly: true,
         }),
-        fetchCustomersCount(token, { dateFrom: df, dateTo: dt, search: s, agency }),
+        fetchCustomersCount(token, { dateFrom: df, dateTo: dt, search: s, agency, withBookingsOnly: true }),
       ])
         .then(([rows, { count }]) => {
           setList(rows)
@@ -68,7 +71,7 @@ export function Reservations() {
         .catch((err: Error) => setError(err?.message ?? 'Liste alınamadı.'))
         .finally(() => setLoading(false))
     },
-    [token, page, dateFrom, dateTo, search, agencyFilter, today]
+    [token, page, dateFrom, dateTo, search, agencyFilter]
   )
 
   const loadRef = useRef(load)

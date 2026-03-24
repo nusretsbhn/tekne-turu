@@ -726,20 +726,20 @@ adminGroup.MapGet("/dashboard/service-list", async (DateOnly? date, AdminService
     }
     catch (Exception ex) { return Results.Json(new { error = ex.Message }, statusCode: 500); }
 });
-adminGroup.MapGet("/customers", async (DateOnly? dateFrom, DateOnly? dateTo, string? search, string? agency, int? limit, int? offset, bool? registrationKayit, AdminService admin, CancellationToken ct) =>
+adminGroup.MapGet("/customers", async (DateOnly? dateFrom, DateOnly? dateTo, string? search, string? agency, int? limit, int? offset, bool? registrationKayit, bool? withBookingsOnly, AdminService admin, CancellationToken ct) =>
 {
     try
     {
-        var list = await admin.GetCustomersAsync(dateFrom, dateTo, search, agency, limit ?? 100, offset ?? 0, registrationKayit ?? false, ct);
+        var list = await admin.GetCustomersAsync(dateFrom, dateTo, search, agency, limit ?? 100, offset ?? 0, registrationKayit ?? false, withBookingsOnly ?? false, ct);
         return Results.Ok(list);
     }
     catch (Exception ex) { return Results.Json(new { error = ex.Message }, statusCode: 500); }
 });
-adminGroup.MapGet("/customers/count", async (DateOnly? dateFrom, DateOnly? dateTo, string? search, string? agency, AdminService admin, CancellationToken ct) =>
+adminGroup.MapGet("/customers/count", async (DateOnly? dateFrom, DateOnly? dateTo, string? search, string? agency, bool? withBookingsOnly, AdminService admin, CancellationToken ct) =>
 {
     try
     {
-        var count = await admin.GetCustomersCountAsync(dateFrom, dateTo, search, agency, ct);
+        var count = await admin.GetCustomersCountAsync(dateFrom, dateTo, search, agency, withBookingsOnly ?? false, ct);
         return Results.Ok(new { count });
     }
     catch (Exception ex) { return Results.Json(new { error = ex.Message }, statusCode: 500); }

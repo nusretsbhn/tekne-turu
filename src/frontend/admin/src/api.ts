@@ -73,6 +73,7 @@ function customerListQueryParams(opts: {
   limit?: number
   offset?: number
   registrationKayit?: boolean
+  withBookingsOnly?: boolean
 }) {
   const p = new URLSearchParams()
   if (opts.dateFrom) p.set('dateFrom', opts.dateFrom)
@@ -82,6 +83,7 @@ function customerListQueryParams(opts: {
   if (opts.limit != null) p.set('limit', String(opts.limit))
   if (opts.offset != null) p.set('offset', String(opts.offset))
   if (opts.registrationKayit) p.set('registrationKayit', 'true')
+  if (opts.withBookingsOnly) p.set('withBookingsOnly', 'true')
   return p
 }
 
@@ -95,6 +97,7 @@ export async function fetchCustomers(
     limit?: number
     offset?: number
     registrationKayit?: boolean
+    withBookingsOnly?: boolean
   }
 ): Promise<CustomerListItem[]> {
   const p = customerListQueryParams(opts)
@@ -104,13 +107,14 @@ export async function fetchCustomers(
 
 export async function fetchCustomersCount(
   token: string,
-  opts: { dateFrom?: string; dateTo?: string; search?: string; agency?: string }
+  opts: { dateFrom?: string; dateTo?: string; search?: string; agency?: string; withBookingsOnly?: boolean }
 ): Promise<{ count: number }> {
   const p = new URLSearchParams()
   if (opts.dateFrom) p.set('dateFrom', opts.dateFrom)
   if (opts.dateTo) p.set('dateTo', opts.dateTo)
   if (opts.search) p.set('search', opts.search)
   if (opts.agency) p.set('agency', opts.agency)
+  if (opts.withBookingsOnly) p.set('withBookingsOnly', 'true')
   const res = await apiGet(token, `/api/admin/customers/count?${p}`)
   return res.json()
 }
