@@ -39,6 +39,7 @@ export function Layout() {
   const adminNavLinks = [
     { to: '/dashboard', label: 'Dashboard', badge: false, badgeType: 'none' as const },
     { to: '/customers', label: 'Müşteriler', badge: false, badgeType: 'none' as const },
+    { to: '/reservations', label: 'Rezervasyonlar', badge: false, badgeType: 'none' as const },
     { to: '/coastguard', label: 'Sahil Güvenlik', badge: false, badgeType: 'none' as const },
     { to: '/tour', label: 'Tur Bilgisi', badge: false, badgeType: 'none' as const },
     { to: '/stops', label: 'Duraklar', badge: false, badgeType: 'none' as const },

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { fetchDashboard, fetchServiceList, type DashboardStats, type ServiceListItem } from '../api'
 
@@ -8,6 +9,7 @@ function todayStr() {
 }
 
 export function Dashboard() {
+  const navigate = useNavigate()
   const { token } = useAuth()
   const [date, setDate] = useState(todayStr)
   const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -166,6 +168,41 @@ export function Dashboard() {
                         <td>{new Date(d.date).toLocaleDateString('tr-TR')}</td>
                         <td style={{ textAlign: 'right' }}>{d.total}</td>
                         <td style={{ textAlign: 'right' }}>{d.checkedIn}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.125rem', marginBottom: '0.75rem' }}>İleri 15 gün</h2>
+              <div className="table-wrap" style={{ maxWidth: 420 }}>
+                <table style={{ minWidth: 0 }}>
+                  <thead>
+                    <tr>
+                      <th>Tarih</th>
+                      <th style={{ textAlign: 'right' }}>Kayıtlı kişi</th>
+                      <th style={{ width: 56 }} aria-label="Müşterilerde göster" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(stats.next15Days ?? []).map((d) => (
+                      <tr key={d.date}>
+                        <td>{new Date(d.date + 'T12:00:00').toLocaleDateString('tr-TR')}</td>
+                        <td style={{ textAlign: 'right' }}>{d.registeredCount}</td>
+                        <td style={{ textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            title="Müşterilerde bu tarihe göre filtrele"
+                            onClick={() =>
+                              navigate(`/customers?dateFrom=${encodeURIComponent(d.date)}&dateTo=${encodeURIComponent(d.date)}`)
+                            }
+                            aria-label="Müşterilerde göster"
+                          >
+                            👁
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

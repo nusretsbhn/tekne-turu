@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using TekneTuru.API.Data;
 using TekneTuru.API.Models;
 using TekneTuru.Core.Entities;
+using CustomerEntity = TekneTuru.Core.Entities.Customer;
 
 namespace TekneTuru.API.Services;
 
@@ -32,6 +33,14 @@ public class AdminService
             last7.Add(new DayCountDto(d.ToString("yyyy-MM-dd"), total, checkedIn));
         }
 
+        var next15 = new List<FutureDayCountDto>();
+        for (var i = 1; i <= 15; i++)
+        {
+            var d = date.AddDays(i);
+            var registered = await _db.DailyBookings.AsNoTracking().CountAsync(b => b.TourDate == d, ct);
+            next15.Add(new FutureDayCountDto(d.ToString("yyyy-MM-dd"), registered));
+        }
+
         var todayCustomers = dayBookings
             .GroupBy(b => b.CustomerId)
             .Select(g => g.OrderBy(b => b.Id).First())
@@ -54,18 +63,20 @@ public class AdminService
             baby.Count,
             baby.Count(b => b.CheckedIn),
             last7,
+            next15,
             todayCustomers
         );
     }
 
-    public async Task<List<CustomerListItemDto>> GetCustomersAsync(
+    /// <summary>
+    /// Müşteri listesi için tarih / acenta / metin filtreleriyle aynı mantığı kullanır (sayım ve sayfalama).
+    /// </summary>
+    private async Task<IQueryable<CustomerEntity>> GetFilteredCustomersQueryAsync(
         DateOnly? dateFrom,
         DateOnly? dateTo,
         string? search,
         string? agencyName,
-        int limit,
-        int offset,
-        CancellationToken ct = default)
+        CancellationToken ct)
     {
         var query = _db.Customers.AsNoTracking();
         if (dateFrom.HasValue || dateTo.HasValue || !string.IsNullOrWhiteSpace(agencyName))
@@ -79,7 +90,7 @@ public class AdminService
             }
             var ids = await bookingQuery.Select(b => b.CustomerId).Distinct().ToListAsync(ct);
             if (ids.Count == 0)
-                return new List<CustomerListItemDto>();
+                return query.Where(c => false);
             query = query.Where(c => ids.Contains(c.Id));
         }
         if (!string.IsNullOrWhiteSpace(search))
@@ -91,6 +102,30 @@ public class AdminService
                 (c.Phone != null && c.Phone.Contains(term)) ||
                 (c.Email != null && c.Email.ToLower().Contains(term)));
         }
+        return query;
+    }
+
+    public async Task<int> GetCustomersCountAsync(
+        DateOnly? dateFrom,
+        DateOnly? dateTo,
+        string? search,
+        string? agencyName,
+        CancellationToken ct = default)
+    {
+        var query = await GetFilteredCustomersQueryAsync(dateFrom, dateTo, search, agencyName, ct);
+        return await query.CountAsync(ct);
+    }
+
+    public async Task<List<CustomerListItemDto>> GetCustomersAsync(
+        DateOnly? dateFrom,
+        DateOnly? dateTo,
+        string? search,
+        string? agencyName,
+        int limit,
+        int offset,
+        CancellationToken ct = default)
+    {
+        var query = await GetFilteredCustomersQueryAsync(dateFrom, dateTo, search, agencyName, ct);
         var list = await query
             .OrderByDescending(c => c.CreatedAt)
             .Skip(offset)

@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
 import { Customers } from './pages/Customers'
+import { Reservations } from './pages/Reservations'
 import { CoastGuard } from './pages/CoastGuard'
 import { Tour } from './pages/Tour'
 import { Stops } from './pages/Stops'
@@ -34,6 +35,7 @@ export default function App() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<RequireRole role="Admin"><Dashboard /></RequireRole>} />
         <Route path="customers" element={<RequireRole role="Admin"><Customers /></RequireRole>} />
+        <Route path="reservations" element={<RequireRole role="Admin"><Reservations /></RequireRole>} />
         <Route path="coastguard" element={<RequireRole role="Admin"><CoastGuard /></RequireRole>} />
         <Route path="tour" element={<RequireRole role="Admin"><Tour /></RequireRole>} />
         <Route path="stops" element={<RequireRole role="Admin"><Stops /></RequireRole>} />

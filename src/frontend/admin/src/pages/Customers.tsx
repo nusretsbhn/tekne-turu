@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { CustomerListFilters } from '../components/CustomerListFilters'
 import { useAuth } from '../contexts/AuthContext'
 import { fetchCustomers, fetchCustomer, fetchCustomerBookings, updateCustomer, updateBooking, type CustomerListItem, type CustomerDetail, type CustomerBookingItem } from '../api'
 
@@ -23,9 +25,16 @@ const emptyForm = (): CustomerDetail & { accommodationPlace?: string | null } =>
 
 export function Customers() {
   const { token } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const openEditParam = searchParams.get('openEdit')
   const today = todayStr()
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState(today)
+  const [dateFrom, setDateFrom] = useState(() => searchParams.get('dateFrom') ?? '')
+  const [dateTo, setDateTo] = useState(() => {
+    const df = searchParams.get('dateFrom') ?? ''
+    const dt = searchParams.get('dateTo') ?? ''
+    return df ? (dt || df) : todayStr()
+  })
   const [search, setSearch] = useState('')
   const [agencyFilter, setAgencyFilter] = useState('')
   const [list, setList] = useState<CustomerListItem[]>([])
@@ -40,31 +49,63 @@ export function Customers() {
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
 
-  const load = () => {
-    if (!token) return
-    setLoading(true)
-    setError('')
-    const trimmedSearch = search.trim()
-    const hasCustomDate = !!dateFrom || dateTo !== today
-    const useDateFilter = hasCustomDate || !trimmedSearch
-    const dateFromParam = useDateFilter ? (dateFrom || undefined) : undefined
-    const dateToParam = useDateFilter ? (dateTo || undefined) : undefined
+  const load = useCallback(
+    (opts?: { dateFrom?: string; dateTo?: string }) => {
+      if (!token) return
+      setLoading(true)
+      setError('')
+      const effFrom = opts?.dateFrom ?? dateFrom
+      const effTo = opts?.dateTo ?? dateTo
+      const trimmedSearch = search.trim()
+      const hasCustomDate = !!effFrom || effTo !== today
+      const useDateFilter = hasCustomDate || !trimmedSearch
+      const dateFromParam = useDateFilter ? (effFrom || undefined) : undefined
+      const dateToParam = useDateFilter ? (effTo || undefined) : undefined
 
-    fetchCustomers(token, {
-      dateFrom: dateFromParam,
-      dateTo: dateToParam,
-      search: trimmedSearch || undefined,
-      agency: agencyFilter?.trim() || undefined,
-      limit: 200,
-    })
-      .then(setList)
-      .catch((err: Error) => setError(err?.message ?? 'Liste alınamadı.'))
-      .finally(() => setLoading(false))
-  }
+      fetchCustomers(token, {
+        dateFrom: dateFromParam,
+        dateTo: dateToParam,
+        search: trimmedSearch || undefined,
+        agency: agencyFilter?.trim() || undefined,
+        limit: 200,
+      })
+        .then(setList)
+        .catch((err: Error) => setError(err?.message ?? 'Liste alınamadı.'))
+        .finally(() => setLoading(false))
+    },
+    [token, dateFrom, dateTo, search, agencyFilter, today]
+  )
+
+  const loadRef = useRef(load)
+  loadRef.current = load
+
+  const qFrom = searchParams.get('dateFrom') ?? ''
+  const qTo = searchParams.get('dateTo') ?? ''
 
   useEffect(() => {
-    load()
-  }, [token])
+    if (!token) return
+    if (qFrom) {
+      const tTo = qTo || qFrom
+      setDateFrom(qFrom)
+      setDateTo(tTo)
+      loadRef.current({ dateFrom: qFrom, dateTo: tTo })
+    } else {
+      setDateFrom('')
+      setDateTo(today)
+      loadRef.current({ dateFrom: '', dateTo: today })
+    }
+  }, [token, qFrom, qTo, today])
+
+  useEffect(() => {
+    if (!openEditParam || !token) return
+    const id = parseInt(openEditParam, 10)
+    if (!Number.isFinite(id) || id <= 0) return
+    setEditId(id)
+    setEditError('')
+    const next = new URLSearchParams(searchParams)
+    next.delete('openEdit')
+    navigate({ search: next.toString() ? `?${next}` : '' }, { replace: true })
+  }, [token, openEditParam, navigate, searchParams])
 
   useEffect(() => {
     if (!token || editId == null) {
@@ -138,13 +179,18 @@ export function Customers() {
   return (
     <div>
       <h1 className="page-title">Müşteriler</h1>
-      <div className="toolbar">
-        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} placeholder="Başlangıç" aria-label="Başlangıç tarihi" />
-        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} aria-label="Bitiş tarihi" />
-        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Ad, TC, telefon, e-posta ara..." aria-label="Ara" />
-        <input type="text" value={agencyFilter} onChange={(e) => setAgencyFilter(e.target.value)} placeholder="Acenta adı filtrele" aria-label="Acenta" />
-        <button type="button" onClick={load} disabled={loading} className="btn btn-primary">Filtrele</button>
-      </div>
+      <CustomerListFilters
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        search={search}
+        agencyFilter={agencyFilter}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        onSearchChange={setSearch}
+        onAgencyChange={setAgencyFilter}
+        onFilter={() => load()}
+        loading={loading}
+      />
       {error && <p className="msg-error">{error}</p>}
       <div className="table-wrap">
         <table>

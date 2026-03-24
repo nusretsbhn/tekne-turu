@@ -735,6 +735,15 @@ adminGroup.MapGet("/customers", async (DateOnly? dateFrom, DateOnly? dateTo, str
     }
     catch (Exception ex) { return Results.Json(new { error = ex.Message }, statusCode: 500); }
 });
+adminGroup.MapGet("/customers/count", async (DateOnly? dateFrom, DateOnly? dateTo, string? search, string? agency, AdminService admin, CancellationToken ct) =>
+{
+    try
+    {
+        var count = await admin.GetCustomersCountAsync(dateFrom, dateTo, search, agency, ct);
+        return Results.Ok(new { count });
+    }
+    catch (Exception ex) { return Results.Json(new { error = ex.Message }, statusCode: 500); }
+});
 adminGroup.MapGet("/customers/{id:int}/bookings", async (int id, DateOnly? dateFrom, DateOnly? dateTo, AppDbContext db, CancellationToken ct) =>
 {
     var query = db.DailyBookings.AsNoTracking().Where(b => b.CustomerId == id);

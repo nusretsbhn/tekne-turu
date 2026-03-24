@@ -10,10 +10,14 @@ public record DashboardStatsDto(
     int BabyTotal,
     int BabyCheckedIn,
     List<DayCountDto> Last7Days,
+    List<FutureDayCountDto> Next15Days,
     List<TodayCustomerDto> TodayCustomers
 );
 
 public record DayCountDto(string Date, int Total, int CheckedIn);
+
+/// <summary>Dashboard: seçilen tarihten sonraki günler için kayıtlı kişi sayısı (tur tarihi bazlı).</summary>
+public record FutureDayCountDto(string Date, int RegisteredCount);
 
 public record TodayCustomerDto(string FullName, string? Phone, bool CheckedIn, string? AgencyName);
 

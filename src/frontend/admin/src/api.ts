@@ -28,6 +28,7 @@ export type DashboardStats = {
   babyTotal: number
   babyCheckedIn: number
   last7Days: { date: string; total: number; checkedIn: number }[]
+  next15Days: { date: string; registeredCount: number }[]
   todayCustomers: TodayCustomerDto[]
 }
 
@@ -64,10 +65,7 @@ export type CustomerListItem = {
   agencyName: string | null
 }
 
-export async function fetchCustomers(
-  token: string,
-  opts: { dateFrom?: string; dateTo?: string; search?: string; agency?: string; limit?: number; offset?: number }
-): Promise<CustomerListItem[]> {
+function customerListQueryParams(opts: { dateFrom?: string; dateTo?: string; search?: string; agency?: string; limit?: number; offset?: number }) {
   const p = new URLSearchParams()
   if (opts.dateFrom) p.set('dateFrom', opts.dateFrom)
   if (opts.dateTo) p.set('dateTo', opts.dateTo)
@@ -75,7 +73,28 @@ export async function fetchCustomers(
   if (opts.agency) p.set('agency', opts.agency)
   if (opts.limit != null) p.set('limit', String(opts.limit))
   if (opts.offset != null) p.set('offset', String(opts.offset))
+  return p
+}
+
+export async function fetchCustomers(
+  token: string,
+  opts: { dateFrom?: string; dateTo?: string; search?: string; agency?: string; limit?: number; offset?: number }
+): Promise<CustomerListItem[]> {
+  const p = customerListQueryParams(opts)
   const res = await apiGet(token, `/api/admin/customers?${p}`)
+  return res.json()
+}
+
+export async function fetchCustomersCount(
+  token: string,
+  opts: { dateFrom?: string; dateTo?: string; search?: string; agency?: string }
+): Promise<{ count: number }> {
+  const p = new URLSearchParams()
+  if (opts.dateFrom) p.set('dateFrom', opts.dateFrom)
+  if (opts.dateTo) p.set('dateTo', opts.dateTo)
+  if (opts.search) p.set('search', opts.search)
+  if (opts.agency) p.set('agency', opts.agency)
+  const res = await apiGet(token, `/api/admin/customers/count?${p}`)
   return res.json()
 }
 
