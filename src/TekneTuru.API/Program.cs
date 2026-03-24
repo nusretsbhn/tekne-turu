@@ -214,7 +214,8 @@ if (!string.IsNullOrEmpty(conn))
     {
         db.SmsTemplates.AddRange(
             new SmsTemplate { TemplateKey = "booking-confirmation", ContentTR = "Sayin {Name}, {TourDate} tarihli Viking Oludeniz Tekne Turuna hosgeldiniz. Tur boyunca asagidaki linkten tum tur bilgilerine erisebilirsiniz. {LandingUrl} Iyi eglenceler dileriz.", IsActive = true, UpdatedAt = DateTime.UtcNow },
-            new SmsTemplate { TemplateKey = "tour-end-thanks", ContentTR = "Sayin {Name}, {TourDate} tarihli Viking Oludeniz Tekne Turunun sonuna geldik. Bizi asagidaki linkten Google'dan puanlamayi ve Instagram'dan takip etmeyi unutmayin! {ThanksPageUrl} Bizi tercih ettiginiz icin tesekkur ederiz.", IsActive = true, UpdatedAt = DateTime.UtcNow });
+            new SmsTemplate { TemplateKey = "tour-end-thanks", ContentTR = "Sayin {Name}, {TourDate} tarihli Viking Oludeniz Tekne Turunun sonuna geldik. Bizi asagidaki linkten Google'dan puanlamayi ve Instagram'dan takip etmeyi unutmayin! {ThanksPageUrl} Bizi tercih ettiginiz icin tesekkur ederiz.", IsActive = true, UpdatedAt = DateTime.UtcNow },
+            new SmsTemplate { TemplateKey = "service-info", ContentTR = "{TourDate} tarihli Viking Oludeniz Tekne Turu servis bilgilendirme mesajidir. Servis Fethiye Merkez icin 08:15 - 09:00 arasi, Ovacik icin 09:00 - 09:30 arasi otelinizin onunden sizi alacaktir. Lutfen ilgili saatte otel kapisinda hazir bulununuz.", IsActive = true, UpdatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
     }
     else
@@ -228,6 +229,10 @@ if (!string.IsNullOrEmpty(conn))
         if (!await db.SmsTemplates.AnyAsync(t => t.TemplateKey == "tour-end-thanks"))
         {
             db.SmsTemplates.Add(new SmsTemplate { TemplateKey = "tour-end-thanks", ContentTR = "Sayin {Name}, {TourDate} tarihli Viking Oludeniz Tekne Turunun sonuna geldik. Bizi asagidaki linkten Google'dan puanlamayi ve Instagram'dan takip etmeyi unutmayin! {ThanksPageUrl} Bizi tercih ettiginiz icin tesekkur ederiz.", IsActive = true, UpdatedAt = DateTime.UtcNow });
+        }
+        if (!await db.SmsTemplates.AnyAsync(t => t.TemplateKey == "service-info"))
+        {
+            db.SmsTemplates.Add(new SmsTemplate { TemplateKey = "service-info", ContentTR = "{TourDate} tarihli Viking Oludeniz Tekne Turu servis bilgilendirme mesajidir. Servis Fethiye Merkez icin 08:15 - 09:00 arasi, Ovacik icin 09:00 - 09:30 arasi otelinizin onunden sizi alacaktir. Lutfen ilgili saatte otel kapisinda hazir bulununuz.", IsActive = true, UpdatedAt = DateTime.UtcNow });
         }
         await db.SaveChangesAsync();
     }

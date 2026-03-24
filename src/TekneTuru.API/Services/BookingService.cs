@@ -140,6 +140,28 @@ public class BookingService
                 {
                     // Rezervasyon başarılı; SMS hatası kaydı iptal etmez
                 }
+
+                if (b.UseShuttle)
+                {
+                    try
+                    {
+                        await _sms.SendWithTemplateAsync(
+                            b.Customer.Phone,
+                            "service-info",
+                            new Dictionary<string, string>
+                            {
+                                ["Name"] = b.Customer.FullName ?? "",
+                                ["TourDate"] = date.ToString("dd.MM.yyyy"),
+                                ["ServicePickupTime"] = b.ServicePickupTime ?? ""
+                            },
+                            b.Customer.Id,
+                            ct);
+                    }
+                    catch
+                    {
+                        // Rezervasyon başarılı; SMS hatası kaydı iptal etmez
+                    }
+                }
             }
         }
 

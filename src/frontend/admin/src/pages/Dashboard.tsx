@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { fetchDashboard, fetchServiceList, type DashboardStats, type ServiceListItem } from '../api'
-import jsPDF from 'jspdf'
 
 function todayStr() {
   const t = new Date()
@@ -36,60 +35,56 @@ export function Dashboard() {
     return () => clearInterval(t)
   }, [token, date, isToday])
 
-  const exportServiceListPdf = () => {
+  const exportServiceListPdf = async () => {
     if (serviceList.length === 0) return
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-    const margin = 10
-    let y = 14
+    const pdfMakeModule = await import('pdfmake/build/pdfmake')
+    const pdfFontsModule = await import('pdfmake/build/vfs_fonts')
+    const pdfMake = (pdfMakeModule as any).default ?? pdfMakeModule
+    const pdfFonts = (pdfFontsModule as any).default ?? pdfFontsModule
+    ;(pdfMake as any).vfs = pdfFonts?.pdfMake?.vfs ?? pdfFonts?.vfs
 
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(14)
-    doc.text('Servis Listesi', margin, y)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    doc.text(`Tarih: ${new Date(serviceListDate + 'T12:00:00').toLocaleDateString('tr-TR')}`, margin, y + 6)
-    y += 14
-
-    const headers = ['Ad Soyad', 'Telefon', 'Otel', 'Kisi', 'Alinis Saati']
-    const colWidths = [70, 45, 90, 20, 45]
-    const rowHeight = 8
-
-    let x = margin
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10)
-    headers.forEach((h, i) => {
-      doc.rect(x, y, colWidths[i], rowHeight)
-      doc.text(h, x + 2, y + 5.5)
-      x += colWidths[i]
-    })
-    y += rowHeight
-
-    doc.setFont('helvetica', 'normal')
-    serviceList.forEach((row) => {
-      if (y + rowHeight > 200) {
-        doc.addPage()
-        y = 14
-      }
-      const values = [
+    const body = [
+      [
+        { text: 'Ad Soyad', style: 'tableHeader' },
+        { text: 'Telefon', style: 'tableHeader' },
+        { text: 'Otel', style: 'tableHeader' },
+        { text: 'Kişi', style: 'tableHeader', alignment: 'right' as const },
+        { text: 'Alınış Saati', style: 'tableHeader' },
+      ],
+      ...serviceList.map((row) => ([
         row.fullName || '—',
         row.phone || '—',
         row.hotel || '—',
-        String(row.personCount ?? 0),
+        { text: String(row.personCount ?? 0), alignment: 'right' as const },
         row.pickupTime || '—',
-      ]
-      let cellX = margin
-      values.forEach((val, i) => {
-        doc.rect(cellX, y, colWidths[i], rowHeight)
-        const maxLen = i === 2 ? 35 : 22
-        const text = val.length > maxLen ? `${val.slice(0, maxLen - 1)}…` : val
-        doc.text(text, cellX + 2, y + 5.5)
-        cellX += colWidths[i]
-      })
-      y += rowHeight
-    })
+      ])),
+    ]
 
+    const docDefinition = {
+      pageOrientation: 'landscape' as const,
+      pageMargins: [20, 20, 20, 20] as [number, number, number, number],
+      content: [
+        { text: 'Servis Listesi', style: 'title' },
+        { text: `Tarih: ${new Date(serviceListDate + 'T12:00:00').toLocaleDateString('tr-TR')}`, margin: [0, 2, 0, 10] as [number, number, number, number] },
+        {
+          table: {
+            headerRows: 1,
+            widths: ['*', 'auto', '*', 'auto', 'auto'] as const,
+            body,
+          },
+          layout: 'lightHorizontalLines' as const,
+        },
+      ],
+      styles: {
+        title: { fontSize: 14, bold: true },
+        tableHeader: { bold: true },
+      },
+      defaultStyle: {
+        font: 'Roboto',
+      },
+    }
     const safeDate = serviceListDate.replace(/-/g, '')
-    doc.save(`servis-listesi-${safeDate}.pdf`)
+    pdfMake.createPdf(docDefinition).download(`servis-listesi-${safeDate}.pdf`)
   }
 
   return (
@@ -192,7 +187,7 @@ export function Dashboard() {
                 </div>
                 <button
                   type="button"
-                  onClick={exportServiceListPdf}
+                  onClick={() => { void exportServiceListPdf() }}
                   disabled={serviceList.length === 0}
                   className="btn btn-sm"
                   style={{
