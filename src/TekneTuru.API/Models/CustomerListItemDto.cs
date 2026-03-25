@@ -10,5 +10,6 @@ public record CustomerListItemDto(
     bool KvkkConsent,
     bool SmsConsent,
     DateTime CreatedAt,
-    string? AgencyName
+    string? AgencyName,
+    DateOnly? TourDate
 );

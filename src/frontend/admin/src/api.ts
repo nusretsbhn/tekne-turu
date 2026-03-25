@@ -63,6 +63,7 @@ export type CustomerListItem = {
   smsConsent: boolean
   createdAt: string
   agencyName: string | null
+  tourDate?: string | null
 }
 
 function customerListQueryParams(opts: {

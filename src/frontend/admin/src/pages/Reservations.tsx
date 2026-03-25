@@ -118,6 +118,7 @@ export function Reservations() {
         <table>
           <thead>
             <tr>
+              <th>Tur Tarihi</th>
               <th>Ad Soyad</th>
               <th>TC/Pasaport</th>
               <th>Telefon</th>
@@ -133,6 +134,7 @@ export function Reservations() {
           <tbody>
             {list.map((c) => (
               <tr key={c.id}>
+                <td>{c.tourDate ? new Date(`${c.tourDate}T12:00:00`).toLocaleDateString('tr-TR') : '—'}</td>
                 <td>{c.fullName}</td>
                 <td>{c.idNumber}</td>
                 <td>{c.phone ?? '—'}</td>

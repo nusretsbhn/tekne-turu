@@ -178,6 +178,9 @@ public class AdminService
                 : (firstTourDateByCustomer.TryGetValue(c.Id, out var td)
                     ? td.ToDateTime(TimeOnly.MinValue)
                     : c.CreatedAt);
+            var tourDate = firstTourDateByCustomer.TryGetValue(c.Id, out var tdForRow)
+                ? tdForRow
+                : null;
 
             return new CustomerListItemDto(
                 c.Id,
@@ -189,7 +192,8 @@ public class AdminService
                 c.KvkkConsent,
                 c.SmsConsent,
                 created,
-                firstAgencyByCustomer.GetValueOrDefault(c.Id));
+                firstAgencyByCustomer.GetValueOrDefault(c.Id),
+                tourDate);
         }).ToList();
     }
 
