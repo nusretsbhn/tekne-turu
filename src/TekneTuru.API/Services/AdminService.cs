@@ -178,7 +178,7 @@ public class AdminService
                 : (firstTourDateByCustomer.TryGetValue(c.Id, out var td)
                     ? td.ToDateTime(TimeOnly.MinValue)
                     : c.CreatedAt);
-            var tourDate = firstTourDateByCustomer.TryGetValue(c.Id, out var tdForRow)
+            DateOnly? tourDate = firstTourDateByCustomer.TryGetValue(c.Id, out var tdForRow)
                 ? tdForRow
                 : null;
 
