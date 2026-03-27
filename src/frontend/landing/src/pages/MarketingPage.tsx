@@ -4,6 +4,7 @@ import { toYoutubeEmbedUrl } from '../utils/youtubeEmbed'
 
 type Screen = 'idle' | 'success' | 'error'
 type Lang = 'tr' | 'en'
+const MARKETING_STATIC_GOOGLE_REVIEWS_URL = 'https://www.google.com/search?sca_esv=ab7f61c36d6d1228&sxsrf=ANbL-n7dlpH9UBw4cmPqGk6RneLb6TnuBA:1774610025487&q=viking+%C3%B6l%C3%BCdeniz+tekne+turu&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOfOhJhUgwsNaI_QFa_833vXpQA55CZRoUMgsTNFR7bo-rzmdEje5VreP5sx6tJXOy3b1ju8%3D&uds=ALYpb_l6DyU7gEufbC-T-1UgqmR0JAkPPHYZ9DDWKcNgfeGaoBLt3PjEvRIy9hi_WUS6w3E1PCpVud2JKkTGOm5ZbkRlvQj3xfFDNPoUnxJL2uQFGl4qZgaJdHnsf4_riZItDcn7tWYb&sa=X&ved=2ahUKEwjzkrzB-b-TAxX8RvEDHd_hHUcQ3PALegQIGRAE&biw=1440&bih=778&dpr=2'
 
 const I18N = {
   tr: {
@@ -246,16 +247,14 @@ export function MarketingPage() {
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>{t.reviewsAndLocation}</h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginBottom: 12 }}>
-              {data.googleReviewsUrl && (
-                <a
-                  href={data.googleReviewsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={styles.googleReviewsBtn}
-                >
-                  {t.googleReviews}
-                </a>
-              )}
+              <a
+                href={MARKETING_STATIC_GOOGLE_REVIEWS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={styles.googleReviewsBtn}
+              >
+                {t.googleReviews}
+              </a>
             </div>
             {(mapEmbedSrc || data.locationMapUrl) && (
               <div>
