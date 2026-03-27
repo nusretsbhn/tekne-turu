@@ -253,6 +253,10 @@ if (!string.IsNullOrEmpty(conn))
     {
         db.Settings.Add(new Setting { Key = "ShortLinkBaseUrl", Value = "", UpdatedAt = DateTime.UtcNow });
     }
+    if (!await db.Settings.AnyAsync(s => s.Key == "YoutubeUrl"))
+    {
+        db.Settings.Add(new Setting { Key = "YoutubeUrl", Value = "https://youtube.com", UpdatedAt = DateTime.UtcNow });
+    }
     if (!await db.Settings.AnyAsync(s => s.Key == "ThanksPageDescription"))
     {
         db.Settings.Add(new Setting { Key = "ThanksPageDescription", Value = "Deneyiminizi paylaşın — Google, Instagram ve TripAdvisor üzerinden bizi puanlamayı ve takip etmeyi unutmayın.", UpdatedAt = DateTime.UtcNow });
@@ -1788,6 +1792,7 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
     settings.TryGetValue("MarketingGalleryJson", out var galleryJson);
     settings.TryGetValue("InstagramUrl", out var instagramUrl);
     settings.TryGetValue("TripAdvisorUrl", out var tripAdvisorUrl);
+    settings.TryGetValue("YoutubeUrl", out var youtubeUrl);
     settings.TryGetValue("MarketingGoogleReviewsUrl", out var marketingGoogleReviewsUrl);
     settings.TryGetValue("GoogleReviewsUrl", out var globalGoogleReviewsUrl);
     settings.TryGetValue("MarketingLocationMapUrl", out var marketingLocationMapUrl);
@@ -1802,9 +1807,17 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
         .Where(d => d.DocType == "menu" && d.Language == "TR")
         .Select(d => d.FileUrl)
         .FirstOrDefaultAsync(ct);
+    var menuPdfEn = await db.Documents.AsNoTracking()
+        .Where(d => d.DocType == "menu" && d.Language == "EN")
+        .Select(d => d.FileUrl)
+        .FirstOrDefaultAsync(ct);
 
     var rulesPdfTr = await db.Documents.AsNoTracking()
         .Where(d => d.DocType == "rules" && d.Language == "TR")
+        .Select(d => d.FileUrl)
+        .FirstOrDefaultAsync(ct);
+    var rulesPdfEn = await db.Documents.AsNoTracking()
+        .Where(d => d.DocType == "rules" && d.Language == "EN")
         .Select(d => d.FileUrl)
         .FirstOrDefaultAsync(ct);
 
@@ -1839,12 +1852,15 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
         gallery,
         videoUrl,
         ToAbsolute(menuPdfTr),
+        ToAbsolute(menuPdfEn),
         instagramUrl,
         tripAdvisorUrl,
+        youtubeUrl,
         googleReviewsForPage,
         marketingLocationMapUrl,
         marketingLocationMapEmbedUrl,
         ToAbsolute(rulesPdfTr),
+        ToAbsolute(rulesPdfEn),
         marketingServiceLocationMapUrl,
         marketingServiceLocationMapEmbedUrl,
         marketingRedbookUrl

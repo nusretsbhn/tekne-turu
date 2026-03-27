@@ -6,6 +6,7 @@ const KEYS = [
   'InstagramUrl',
   'GoogleReviewsUrl',
   'TripAdvisorUrl',
+  'YoutubeUrl',
   'LandingBaseUrl',
   'ThanksPageUrl',
   'ShortLinkBaseUrl',

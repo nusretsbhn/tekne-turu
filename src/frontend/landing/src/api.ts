@@ -80,13 +80,16 @@ export type MarketingLandingData = {
   gallery: MarketingGalleryItem[]
   videoUrl: string | null
   barMenuPdfUrl: string | null
+  barMenuPdfUrlEn?: string | null
   instagramUrl: string | null
   tripAdvisorUrl?: string | null
+  youtubeUrl?: string | null
   /** Tanıtım (API güncellemesi sonrası) */
   googleReviewsUrl?: string | null
   locationMapUrl?: string | null
   locationMapEmbedUrl?: string | null
   rulesPdfUrl?: string | null
+  rulesPdfUrlEn?: string | null
   serviceLocationMapUrl?: string | null
   serviceLocationMapEmbedUrl?: string | null
   redbookUrl?: string | null

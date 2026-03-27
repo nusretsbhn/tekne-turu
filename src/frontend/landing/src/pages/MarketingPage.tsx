@@ -3,6 +3,62 @@ import { fetchMarketingLandingData, submitPreReservation, type MarketingLandingD
 import { toYoutubeEmbedUrl } from '../utils/youtubeEmbed'
 
 type Screen = 'idle' | 'success' | 'error'
+type Lang = 'tr' | 'en'
+
+const I18N = {
+  tr: {
+    loading: 'Yükleniyor...',
+    pageError: 'Sayfa yüklenemedi.',
+    reserveNow: 'Ön Rezervasyon Yap',
+    reviewsAndLocation: 'Yorumlar ve konum',
+    googleReviews: "Google'da yorumları gör",
+    directions: 'Yol tarifi al',
+    services: 'Hizmetler',
+    price: 'Tur Fiyatı',
+    stops: 'Duraklar',
+    gallery: 'Tur Görselleri',
+    video: 'Tur videosu',
+    docsTitle: 'Dokümanlar',
+    docsDesc: 'Bar listesi ve tekne kuralları dökümanlarına aşağıdan ulaşabilirsiniz.',
+    barMenu: 'Bar Listesi',
+    rules: 'Tekne Kuralları',
+    openPdf: 'PDF Aç',
+    socialsTitle: 'Sosyal Medyada Biz',
+    preReservationTitle: 'Ön Rezervasyon',
+    preReservationDesc: 'Talebinizi bırakın, sizi en kısa sürede arayalım.',
+    close: 'Kapat',
+    send: 'Talep Gönder',
+    sending: 'Gönderiliyor...',
+    requestReceived: 'Talebiniz alındı, en kısa sürede dönüş yapacağız.',
+    requestFailed: 'Talebiniz kaydedilemedi.',
+  },
+  en: {
+    loading: 'Loading...',
+    pageError: 'Page could not be loaded.',
+    reserveNow: 'Make Pre-Reservation',
+    reviewsAndLocation: 'Reviews & location',
+    googleReviews: 'See reviews on Google',
+    directions: 'Get directions',
+    services: 'Services',
+    price: 'Tour Price',
+    stops: 'Stops',
+    gallery: 'Tour Gallery',
+    video: 'Tour video',
+    docsTitle: 'Documents',
+    docsDesc: 'You can access the bar list and boat rules documents below.',
+    barMenu: 'Bar List',
+    rules: 'Boat Rules',
+    openPdf: 'Open PDF',
+    socialsTitle: 'Find Us on Social Media',
+    preReservationTitle: 'Pre-Reservation',
+    preReservationDesc: 'Leave your request and we will call you shortly.',
+    close: 'Close',
+    send: 'Send Request',
+    sending: 'Sending...',
+    requestReceived: 'Your request has been received. We will contact you soon.',
+    requestFailed: 'Your request could not be saved.',
+  },
+} as const
 
 /** Admin alanına iframe HTML yapıştırılırsa src URL'sini çıkarır. */
 function extractEmbedSrc(input: string | null | undefined): string | null {
@@ -17,8 +73,8 @@ export function MarketingPage() {
   const [data, setData] = useState<MarketingLandingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lang, setLang] = useState<Lang>('tr')
   const [modalOpen, setModalOpen] = useState(false)
-  const [menuPopupOpen, setMenuPopupOpen] = useState(false)
   const [form, setForm] = useState({
     fullName: '',
     phone: '',
@@ -60,11 +116,11 @@ export function MarketingPage() {
         tourDate: form.tourDate,
       })
       setSubmitStatus('success')
-      setSubmitMessage('Talebiniz alındı, en kısa sürede dönüş yapacağız.')
+      setSubmitMessage(I18N[lang].requestReceived)
       setForm((f) => ({ ...f, fullName: '', phone: '', email: '', hotelName: '' }))
     } catch (err) {
       setSubmitStatus('error')
-      setSubmitMessage(err instanceof Error ? err.message : 'Talebiniz kaydedilemedi.')
+      setSubmitMessage(err instanceof Error ? err.message : I18N[lang].requestFailed)
     } finally {
       setSubmitting(false)
     }
@@ -73,7 +129,7 @@ export function MarketingPage() {
   if (loading) {
     return (
       <div style={styles.page}>
-        <p style={{ textAlign: 'center', padding: '3rem' }}>Yükleniyor...</p>
+        <p style={{ textAlign: 'center', padding: '3rem' }}>{I18N[lang].loading}</p>
       </div>
     )
   }
@@ -81,7 +137,7 @@ export function MarketingPage() {
   if (error || !data) {
     return (
       <div style={styles.page}>
-        <p style={{ textAlign: 'center', padding: '3rem', color: '#c00' }}>{error ?? 'Sayfa yüklenemedi.'}</p>
+        <p style={{ textAlign: 'center', padding: '3rem', color: '#c00' }}>{error ?? I18N[lang].pageError}</p>
       </div>
     )
   }
@@ -95,6 +151,18 @@ export function MarketingPage() {
     return url.startsWith('/') ? `${origin}${url}` : `${origin}/${url}`
   }
   const bannerUrl = resolveUrl(data.bannerUrl) || `${window.location.origin}/banner.jpg`
+  const t = I18N[lang]
+  const barPdfUrl = lang === 'en' ? (resolveUrl(data.barMenuPdfUrlEn) || resolveUrl(data.barMenuPdfUrl)) : resolveUrl(data.barMenuPdfUrl)
+  const rulesPdfUrl = lang === 'en' ? (resolveUrl(data.rulesPdfUrlEn) || resolveUrl(data.rulesPdfUrl)) : resolveUrl(data.rulesPdfUrl)
+  const socialLinks = [
+    { key: 'instagram', href: data.instagramUrl, label: 'Instagram', icon: 'IG' },
+    { key: 'tripadvisor', href: data.tripAdvisorUrl, label: 'TripAdvisor', icon: 'TA' },
+    { key: 'youtube', href: data.youtubeUrl, label: 'YouTube', icon: 'YT' },
+  ].filter((s) => !!s.href) as Array<{ key: string; href: string; label: string; icon: string }>
+
+  const openPdf = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
 
   // Fiyat metninden Yetişkin/Çocuk/Bebek fiyatlarını çıkar (örn: "Yetişkin 2000₺, Çocuk 1000₺, Bebek 0₺")
   const videoEmbedSrc = data.videoUrl ? toYoutubeEmbedUrl(data.videoUrl) : null
@@ -139,28 +207,36 @@ export function MarketingPage() {
       <header style={{ ...styles.banner, backgroundImage: `url(${bannerUrl})` }}>
         <div style={styles.bannerOverlay} />
         <div style={styles.bannerContent}>
+          <div style={styles.langSwitch}>
+            <button type="button" style={{ ...styles.langBtn, ...(lang === 'tr' ? styles.langBtnActive : {}) }} onClick={() => setLang('tr')}>
+              TR
+            </button>
+            <button type="button" style={{ ...styles.langBtn, ...(lang === 'en' ? styles.langBtnActive : {}) }} onClick={() => setLang('en')}>
+              EN
+            </button>
+          </div>
           <h1 style={styles.bannerTitle}>{data.tourTitle}</h1>
           {(data.startTime || data.endTime) && (
             <p style={styles.bannerSub}>
               {data.startTime && data.endTime
-                ? `Kalkış ${data.startTime} · Dönüş ${data.endTime}`
+                ? (lang === 'en' ? `Departure ${data.startTime} · Return ${data.endTime}` : `Kalkış ${data.startTime} · Dönüş ${data.endTime}`)
                 : data.startTime
-                  ? `Kalkış ${data.startTime}`
-                  : `Bitiş ${data.endTime}`}
+                  ? (lang === 'en' ? `Departure ${data.startTime}` : `Kalkış ${data.startTime}`)
+                  : (lang === 'en' ? `End ${data.endTime}` : `Bitiş ${data.endTime}`)}
             </p>
           )}
           {data.departurePoint && (
             <p style={styles.bannerSub}>
-              Kalkış: {data.departurePoint}{' '}
+              {lang === 'en' ? 'Departure:' : 'Kalkış:'} {data.departurePoint}{' '}
               {data.departureMapUrl && (
                 <a href={data.departureMapUrl} target="_blank" rel="noopener noreferrer" style={styles.linkInline}>
-                  (Haritada Gör)
+                  {lang === 'en' ? '(View on map)' : '(Haritada Gör)'}
                 </a>
               )}
             </p>
           )}
-          <button type="button" style={styles.primaryBtn} onClick={() => setModalOpen(true)}>
-            Ön Rezervasyon Yap
+          <button type="button" style={styles.heroCtaBtn} onClick={() => setModalOpen(true)}>
+            {t.reserveNow}
           </button>
         </div>
       </header>
@@ -168,7 +244,7 @@ export function MarketingPage() {
       <main style={styles.main}>
         {(data.googleReviewsUrl || data.locationMapUrl || data.locationMapEmbedUrl) && (
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Yorumlar ve konum</h2>
+            <h2 style={styles.sectionTitle}>{t.reviewsAndLocation}</h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginBottom: 12 }}>
               {data.googleReviewsUrl && (
                 <a
@@ -177,7 +253,7 @@ export function MarketingPage() {
                   rel="noopener noreferrer"
                   style={styles.googleReviewsBtn}
                 >
-                  Google&apos;da yorumları gör
+                  {t.googleReviews}
                 </a>
               )}
             </div>
@@ -198,7 +274,7 @@ export function MarketingPage() {
                 {directionsUrl && (
                   <p style={{ marginTop: 12, marginBottom: 0, fontSize: 15 }}>
                     <a href={directionsUrl} target="_blank" rel="noopener noreferrer" style={styles.linkMap}>
-                      Yol tarifi al
+                      {t.directions}
                     </a>
                   </p>
                 )}
@@ -209,14 +285,14 @@ export function MarketingPage() {
 
         {data.services && (
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Hizmetler</h2>
+            <h2 style={styles.sectionTitle}>{t.services}</h2>
             <p style={styles.text}>{data.services}</p>
           </section>
         )}
 
         {data.price && (
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Tur Fiyatı</h2>
+            <h2 style={styles.sectionTitle}>{t.price}</h2>
             {priceItems.length > 1 ? (
               <div style={styles.priceGrid}>
                 {priceItems.map((item, i) => (
@@ -236,7 +312,7 @@ export function MarketingPage() {
 
         {data.stops.length > 0 && (
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Duraklar</h2>
+            <h2 style={styles.sectionTitle}>{t.stops}</h2>
             <div style={styles.stopsGrid}>
               {data.stops.map((stop, i) => (
                 <div key={i} style={styles.stopCard}>
@@ -251,7 +327,7 @@ export function MarketingPage() {
 
         {data.gallery.length > 0 && (
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Tur Görselleri</h2>
+            <h2 style={styles.sectionTitle}>{t.gallery}</h2>
             <div style={styles.galleryGrid}>
               {data.gallery.map((g, i) => (
                 <figure key={i} style={styles.galleryItem}>
@@ -270,7 +346,7 @@ export function MarketingPage() {
 
         {data.videoUrl && (
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Tur videosu</h2>
+            <h2 style={styles.sectionTitle}>{t.video}</h2>
             <div style={styles.videoWrap}>
               {videoEmbedSrc ? (
                 <iframe
@@ -287,65 +363,50 @@ export function MarketingPage() {
           </section>
         )}
 
-        {data.barMenuPdfUrl && (
+        {(barPdfUrl || rulesPdfUrl) && (
           <section style={styles.section}>
-            <h2 style={{ ...styles.sectionTitle, marginBottom: 16 }}>Bar Menüsü</h2>
-            <div style={styles.barMenuCard}>
-              <p style={{ margin: 0, marginBottom: 12, fontSize: 15, color: '#555' }}>
-                İçecek ve atıştırmalık listesini aşağıdaki butondan açabilirsiniz.
-              </p>
-              <button
-                type="button"
-                onClick={() => setMenuPopupOpen(true)}
-                style={{ ...styles.primaryBtn, marginTop: 0, textDecoration: 'none' }}
-              >
-                Bar Menüsünü Gör
-              </button>
+            <h2 style={{ ...styles.sectionTitle, marginBottom: 16 }}>{t.docsTitle}</h2>
+            <p style={{ marginTop: 0, marginBottom: 12, color: '#555', fontSize: 15 }}>{t.docsDesc}</p>
+            <div style={styles.docsGrid}>
+              {barPdfUrl && (
+                <div style={styles.docCard}>
+                  <strong style={styles.docTitle}>{t.barMenu}</strong>
+                  <button type="button" onClick={() => openPdf(barPdfUrl)} style={styles.docBtn}>
+                    {t.openPdf}
+                  </button>
+                </div>
+              )}
+              {rulesPdfUrl && (
+                <div style={styles.docCard}>
+                  <strong style={styles.docTitle}>{t.rules}</strong>
+                  <button type="button" onClick={() => openPdf(rulesPdfUrl)} style={styles.docBtn}>
+                    {t.openPdf}
+                  </button>
+                </div>
+              )}
             </div>
           </section>
         )}
 
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Bizi Takip Edin</h2>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            {data.instagramUrl && (
-              <a href={data.instagramUrl} target="_blank" rel="noopener noreferrer" style={styles.secondaryBtn}>
-                Instagram
+          <h2 style={styles.sectionTitle}>{t.socialsTitle}</h2>
+          <div style={styles.socialIconRow}>
+            {socialLinks.map((social) => (
+              <a key={social.key} href={social.href} target="_blank" rel="noopener noreferrer" style={styles.socialIconLink} aria-label={social.label} title={social.label}>
+                <span style={styles.socialIconCircle}>{social.icon}</span>
+                <span style={styles.socialIconLabel}>{social.label}</span>
               </a>
-            )}
-            {data.tripAdvisorUrl && (
-              <a href={data.tripAdvisorUrl} target="_blank" rel="noopener noreferrer" style={styles.secondaryBtn}>
-                TripAdvisor
-              </a>
-            )}
+            ))}
           </div>
         </section>
       </main>
 
-      {menuPopupOpen && data.barMenuPdfUrl && (
-        <div style={styles.modalBackdrop} onClick={() => setMenuPopupOpen(false)} role="dialog" aria-modal="true" aria-label="Bar menüsü">
-          <div style={styles.menuPopup} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.menuPopupHeader}>
-              <strong>Bar Menüsü</strong>
-              <button type="button" onClick={() => setMenuPopupOpen(false)} style={styles.popupCloseBtn}>
-                Kapat
-              </button>
-            </div>
-            <iframe
-              title="Bar menüsü PDF"
-              src={resolveUrl(data.barMenuPdfUrl)}
-              style={styles.menuPopupIframe}
-            />
-          </div>
-        </div>
-      )}
-
       {modalOpen && (
         <div style={styles.modalBackdrop} onClick={() => setModalOpen(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0, marginBottom: 12 }}>Ön Rezervasyon</h2>
+            <h2 style={{ marginTop: 0, marginBottom: 12 }}>{t.preReservationTitle}</h2>
             <p style={{ marginTop: 0, marginBottom: 16, fontSize: 14, color: '#555' }}>
-              Talebinizi bırakın, sizi en kısa sürede arayalım.
+              {t.preReservationDesc}
             </p>
             <form onSubmit={handleSubmit}>
               <div style={styles.formRow}>
@@ -443,7 +504,7 @@ export function MarketingPage() {
                   style={styles.secondaryBtn}
                   onClick={() => setModalOpen(false)}
                 >
-                  Kapat
+                  {t.close}
                 </button>
                 <button
                   type="submit"
@@ -454,7 +515,7 @@ export function MarketingPage() {
                   }}
                   disabled={submitting}
                 >
-                  {submitting ? 'Gönderiliyor...' : 'Talep Gönder'}
+                  {submitting ? t.sending : t.send}
                 </button>
               </div>
             </form>
@@ -488,7 +549,12 @@ const styles: Record<string, CSSProperties> = {
   bannerContent: {
     position: 'relative',
     zIndex: 1,
-    maxWidth: 640,
+    maxWidth: 760,
+    margin: '0 auto',
+    textAlign: 'center' as const,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
   },
   bannerTitle: {
     margin: 0,
@@ -500,6 +566,26 @@ const styles: Record<string, CSSProperties> = {
     marginTop: 8,
     fontSize: 16,
     textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+  },
+  langSwitch: {
+    display: 'inline-flex',
+    border: '1px solid rgba(255,255,255,0.55)',
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginBottom: 12,
+    background: 'rgba(0,0,0,0.2)',
+  },
+  langBtn: {
+    border: 'none',
+    background: 'transparent',
+    color: '#fff',
+    padding: '8px 14px',
+    fontWeight: 700,
+    cursor: 'pointer',
+  },
+  langBtnActive: {
+    background: '#fff',
+    color: '#111',
   },
   linkInline: {
     color: '#ffd966',
@@ -516,6 +602,18 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 16,
     fontWeight: 600,
     cursor: 'pointer',
+  },
+  heroCtaBtn: {
+    marginTop: 22,
+    padding: '16px 38px',
+    background: '#f97316',
+    color: '#fff',
+    borderRadius: 999,
+    border: 'none',
+    fontSize: 20,
+    fontWeight: 700,
+    cursor: 'pointer',
+    boxShadow: '0 8px 22px rgba(0,0,0,0.35)',
   },
   secondaryBtn: {
     padding: '10px 20px',
@@ -575,46 +673,63 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
     border: '1px solid rgba(0,0,0,0.06)',
   },
-  barMenuCard: {
+  docsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+    gap: 12,
+  },
+  docCard: {
     background: '#fff',
     borderRadius: 12,
-    padding: 20,
+    padding: 18,
     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
     border: '1px solid rgba(0,0,0,0.06)',
   },
-  menuPopup: {
-    background: '#fff',
-    borderRadius: 16,
-    overflow: 'hidden',
-    maxWidth: '95vw',
-    width: 900,
-    maxHeight: '90vh',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
+  docTitle: {
+    display: 'block',
+    marginBottom: 12,
+    fontSize: 16,
+    color: '#111',
   },
-  menuPopupHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '12px 16px',
-    background: '#f5f5f5',
-    borderBottom: '1px solid #eee',
-  },
-  popupCloseBtn: {
-    padding: '8px 16px',
-    border: '1px solid #ccc',
-    background: '#fff',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontWeight: 500,
-    fontSize: 14,
-  },
-  menuPopupIframe: {
-    flex: 1,
-    width: '100%',
-    minHeight: 400,
+  docBtn: {
+    padding: '10px 16px',
+    background: '#0f172a',
+    color: '#fff',
     border: 'none',
+    borderRadius: 10,
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  socialIconRow: {
+    display: 'flex',
+    gap: 20,
+    flexWrap: 'wrap' as const,
+    alignItems: 'center',
+  },
+  socialIconLink: {
+    display: 'inline-flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: 8,
+    color: '#111',
+    textDecoration: 'none',
+  },
+  socialIconCircle: {
+    width: 78,
+    height: 78,
+    borderRadius: '50%',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#fff',
+    border: '1px solid #ddd',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    fontWeight: 800,
+    fontSize: 22,
+  },
+  socialIconLabel: {
+    fontSize: 14,
+    fontWeight: 600,
   },
   text: {
     margin: 0,
