@@ -155,10 +155,10 @@ export function MarketingPage() {
   const barPdfUrl = lang === 'en' ? (resolveUrl(data.barMenuPdfUrlEn) || resolveUrl(data.barMenuPdfUrl)) : resolveUrl(data.barMenuPdfUrl)
   const rulesPdfUrl = lang === 'en' ? (resolveUrl(data.rulesPdfUrlEn) || resolveUrl(data.rulesPdfUrl)) : resolveUrl(data.rulesPdfUrl)
   const socialLinks = [
-    { key: 'instagram', href: data.instagramUrl, label: 'Instagram', icon: 'IG' },
-    { key: 'tripadvisor', href: data.tripAdvisorUrl, label: 'TripAdvisor', icon: 'TA' },
-    { key: 'youtube', href: data.youtubeUrl, label: 'YouTube', icon: 'YT' },
-  ].filter((s) => !!s.href) as Array<{ key: string; href: string; label: string; icon: string }>
+    { key: 'instagram', href: data.instagramUrl, label: 'Instagram', logoUrl: 'https://cdn.simpleicons.org/instagram' },
+    { key: 'tripadvisor', href: data.tripAdvisorUrl, label: 'TripAdvisor', logoUrl: 'https://cdn.simpleicons.org/tripadvisor' },
+    { key: 'youtube', href: data.youtubeUrl, label: 'YouTube', logoUrl: 'https://cdn.simpleicons.org/youtube' },
+  ].filter((s) => !!s.href) as Array<{ key: string; href: string; label: string; logoUrl: string }>
 
   const openPdf = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer')
@@ -393,7 +393,9 @@ export function MarketingPage() {
           <div style={styles.socialIconRow}>
             {socialLinks.map((social) => (
               <a key={social.key} href={social.href} target="_blank" rel="noopener noreferrer" style={styles.socialIconLink} aria-label={social.label} title={social.label}>
-                <span style={styles.socialIconCircle}>{social.icon}</span>
+                <span style={styles.socialIconCircle}>
+                  <img src={social.logoUrl} alt={social.label} style={styles.socialIconImg} loading="lazy" />
+                </span>
                 <span style={styles.socialIconLabel}>{social.label}</span>
               </a>
             ))}
@@ -726,6 +728,13 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     fontWeight: 800,
     fontSize: 22,
+    padding: 18,
+    boxSizing: 'border-box' as const,
+  },
+  socialIconImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain' as const,
   },
   socialIconLabel: {
     fontSize: 14,
