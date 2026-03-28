@@ -10,6 +10,7 @@ public record MarketingLandingDto(
     string? DepartureMapUrl,
     List<LandingStopDto> Stops,
     string? Services,
+    string? ServicesEn,
     string? Price,
     string? BannerUrl,
     List<MarketingGalleryItemDto> Gallery,

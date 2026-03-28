@@ -64,6 +64,21 @@ function useToken(): string | null {
   return search.get('token')
 }
 
+/** Göreli /uploads yolları ve API'nin http döndürmesi (HTTPS sayfa + iframe karışık içerik). */
+function resolveAssetUrl(url: string | null | undefined): string {
+  if (!url?.trim()) return ''
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+  let s = url.trim()
+  if (!s.startsWith('http://') && !s.startsWith('https://')) {
+    const origin = apiBase || window.location.origin
+    s = s.startsWith('/') ? `${origin}${s}` : `${origin}/${s}`
+  }
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && s.startsWith('http://')) {
+    s = `https://${s.slice('http://'.length)}`
+  }
+  return s
+}
+
 type PdfPopup = 'menu' | 'rules' | null
 
 export function TokenLandingPage() {
@@ -117,6 +132,8 @@ export function TokenLandingPage() {
   const t = lang === 'tr'
   const menuPdf = t ? data.menuPdfTr : data.menuPdfEn
   const rulesPdf = t ? data.rulesPdfTr : data.rulesPdfEn
+  const menuPdfUrl = resolveAssetUrl(menuPdf)
+  const rulesPdfUrl = resolveAssetUrl(rulesPdf)
   const heroStyle = data.tour?.imageUrl
     ? { ...styles.hero, backgroundImage: `url(${data.tour.imageUrl})` }
     : styles.hero
@@ -171,8 +188,17 @@ export function TokenLandingPage() {
 
       <section style={styles.section}>
         <h2 style={styles.sectionTitle}>{t ? 'Bar menüsü' : 'Bar menu'}</h2>
-        {menuPdf ? (
-          <button type="button" onClick={() => setPdfPopup('menu')} style={styles.linkBtn}>{t ? 'Menüyü görüntüle' : 'View menu'}</button>
+        {menuPdfUrl ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+            <button type="button" onClick={() => setPdfPopup('menu')} style={styles.linkBtn}>{t ? 'Menüyü görüntüle' : 'View menu'}</button>
+            <button
+              type="button"
+              onClick={() => window.open(menuPdfUrl, '_blank', 'noopener,noreferrer')}
+              style={styles.linkBtnSecondary}
+            >
+              {t ? 'Yeni sekmede aç' : 'Open in new tab'}
+            </button>
+          </div>
         ) : (
           <p style={styles.muted}>{t ? 'Menü yüklenmedi.' : 'Menu not available.'}</p>
         )}
@@ -180,14 +206,23 @@ export function TokenLandingPage() {
 
       <section style={styles.section}>
         <h2 style={styles.sectionTitle}>{t ? 'Tekne kuralları' : 'Boat rules'}</h2>
-        {rulesPdf ? (
-          <button type="button" onClick={() => setPdfPopup('rules')} style={styles.linkBtn}>{t ? 'Kuralları görüntüle' : 'View rules'}</button>
+        {rulesPdfUrl ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+            <button type="button" onClick={() => setPdfPopup('rules')} style={styles.linkBtn}>{t ? 'Kuralları görüntüle' : 'View rules'}</button>
+            <button
+              type="button"
+              onClick={() => window.open(rulesPdfUrl, '_blank', 'noopener,noreferrer')}
+              style={styles.linkBtnSecondary}
+            >
+              {t ? 'Yeni sekmede aç' : 'Open in new tab'}
+            </button>
+          </div>
         ) : (
           <p style={styles.muted}>{t ? 'Kurallar yüklenmedi.' : 'Rules not available.'}</p>
         )}
       </section>
 
-      {pdfPopup && (pdfPopup === 'menu' ? menuPdf : rulesPdf) && (
+      {pdfPopup && (pdfPopup === 'menu' ? menuPdfUrl : rulesPdfUrl) && (
         <div
           style={{
             position: 'fixed',
@@ -221,13 +256,22 @@ export function TokenLandingPage() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ padding: '12px 16px', background: '#f5f5f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '12px 16px', background: '#f5f5f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               <strong>{pdfPopup === 'menu' ? (t ? 'Bar menüsü' : 'Bar menu') : (t ? 'Tekne kuralları' : 'Boat rules')}</strong>
-              <button type="button" onClick={() => setPdfPopup(null)} style={{ padding: '6px 14px', border: '1px solid #ccc', background: '#fff', borderRadius: 6, cursor: 'pointer', fontWeight: 500 }}>{t ? 'Kapat' : 'Close'}</button>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => window.open(pdfPopup === 'menu' ? menuPdfUrl : rulesPdfUrl, '_blank', 'noopener,noreferrer')}
+                  style={{ padding: '6px 14px', border: '1px solid #ccc', background: '#fff', borderRadius: 6, cursor: 'pointer', fontWeight: 500 }}
+                >
+                  {t ? 'Yeni sekmede aç' : 'Open in new tab'}
+                </button>
+                <button type="button" onClick={() => setPdfPopup(null)} style={{ padding: '6px 14px', border: '1px solid #ccc', background: '#fff', borderRadius: 6, cursor: 'pointer', fontWeight: 500 }}>{t ? 'Kapat' : 'Close'}</button>
+              </div>
             </div>
             <iframe
               title={pdfPopup === 'menu' ? (t ? 'Bar menüsü PDF' : 'Bar menu PDF') : (t ? 'Tekne kuralları PDF' : 'Boat rules PDF')}
-              src={pdfPopup === 'menu' ? menuPdf! : rulesPdf!}
+              src={pdfPopup === 'menu' ? menuPdfUrl : rulesPdfUrl}
               style={{ flex: 1, width: '100%', border: 'none', minHeight: 400 }}
             />
           </div>
@@ -322,5 +366,16 @@ const styles: Record<string, React.CSSProperties> = {
   stopName: { margin: 0, padding: 12, fontSize: 16 },
   stopDesc: { margin: 0, padding: '0 12px 12px', fontSize: 14, color: '#555' },
   linkBtn: { display: 'inline-block', padding: '10px 20px', background: '#1a1a1a', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 500 },
+  linkBtnSecondary: {
+    display: 'inline-block',
+    padding: '10px 20px',
+    background: '#fff',
+    color: '#1a1a1a',
+    border: '1px solid #1a1a1a',
+    borderRadius: 8,
+    textDecoration: 'none',
+    fontWeight: 500,
+    cursor: 'pointer',
+  },
   muted: { color: '#888', margin: 0 },
 }

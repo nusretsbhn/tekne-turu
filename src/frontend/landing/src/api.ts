@@ -75,6 +75,7 @@ export type MarketingLandingData = {
   departureMapUrl: string | null
   stops: { name: string; description: string | null; imageUrl: string | null }[]
   services: string | null
+  servicesEn?: string | null
   price: string | null
   bannerUrl: string | null
   gallery: MarketingGalleryItem[]

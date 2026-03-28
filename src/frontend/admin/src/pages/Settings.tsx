@@ -11,7 +11,12 @@ const KEYS = [
   'ThanksPageUrl',
   'ShortLinkBaseUrl',
   'DeskAcentaBaseUrl',
+  'DeskRegistrationUrl',
 ] as const
+
+const KEY_LABELS: Partial<Record<(typeof KEYS)[number], string>> = {
+  DeskRegistrationUrl: 'Desk kayıt sayfası URL (bilet SMS şablonunda {DeskUrl})',
+}
 const THANKS_DESC_KEY = 'ThanksPageDescription'
 const THANKS_SURVEY_KEY = 'ThanksSurveyJson'
 
@@ -138,7 +143,7 @@ export function Settings() {
         <h2 style={{ fontSize: '1.125rem', marginBottom: 12 }}>Genel linkler</h2>
         {KEYS.map((key) => (
           <div key={key} className="form-group">
-            <label>{key.replace(/([A-Z])/g, ' $1').trim()}</label>
+            <label>{KEY_LABELS[key] ?? key.replace(/([A-Z])/g, ' $1').trim()}</label>
             <input
               value={values[key] ?? ''}
               onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}

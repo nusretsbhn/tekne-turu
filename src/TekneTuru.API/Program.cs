@@ -1,9 +1,11 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -81,6 +83,14 @@ builder.Services.AddHostedService<TourEndSmsBackgroundService>();
 builder.Services.AddHostedService<IysRetryBackgroundService>();
 builder.Services.AddHealthChecks();
 builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = 52_428_800); // 50 MB
+
+// Nginx vb. arkasında gerçek şema (https) ve mutlak URL'ler için X-Forwarded-Proto kullan
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 var app = builder.Build();
 
@@ -220,7 +230,8 @@ if (!string.IsNullOrEmpty(conn))
         db.SmsTemplates.AddRange(
             new SmsTemplate { TemplateKey = "booking-confirmation", ContentTR = "Sayin {Name}, {TourDate} tarihli Viking Oludeniz Tekne Turuna hosgeldiniz. Tur boyunca asagidaki linkten tum tur bilgilerine erisebilirsiniz. {LandingUrl} Iyi eglenceler dileriz.", IsActive = true, UpdatedAt = DateTime.UtcNow },
             new SmsTemplate { TemplateKey = "tour-end-thanks", ContentTR = "Sayin {Name}, {TourDate} tarihli Viking Oludeniz Tekne Turunun sonuna geldik. Bizi asagidaki linkten Google'dan puanlamayi ve Instagram'dan takip etmeyi unutmayin! {ThanksPageUrl} Bizi tercih ettiginiz icin tesekkur ederiz.", IsActive = true, UpdatedAt = DateTime.UtcNow },
-            new SmsTemplate { TemplateKey = "service-info", ContentTR = "{TourDate} tarihli Viking Oludeniz Tekne Turu servis bilgilendirme mesajidir. Servis Fethiye Merkez icin 08:15 - 09:00 arasi, Ovacik icin 09:00 - 09:30 arasi otelinizin onunden sizi alacaktir. Lutfen ilgili saatte otel kapisinda hazir bulununuz.", IsActive = true, UpdatedAt = DateTime.UtcNow });
+            new SmsTemplate { TemplateKey = "service-info", ContentTR = "{TourDate} tarihli Viking Oludeniz Tekne Turu servis bilgilendirme mesajidir. Servis Fethiye Merkez icin 08:15 - 09:00 arasi, Ovacik icin 09:00 - 09:30 arasi otelinizin onunden sizi alacaktir. Lutfen ilgili saatte otel kapisinda hazir bulununuz.", IsActive = true, UpdatedAt = DateTime.UtcNow },
+            new SmsTemplate { TemplateKey = "ticket-desk", ContentTR = "{TourDate}'li Viking Ölüdeniz Tekne Turu biletiniz oluşturulmuştur. Lütfen aşağıdaki linkten yolcu kaydınızı oluşturunuz. {DeskUrl}", IsActive = true, UpdatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
     }
     else
@@ -238,6 +249,10 @@ if (!string.IsNullOrEmpty(conn))
         if (!await db.SmsTemplates.AnyAsync(t => t.TemplateKey == "service-info"))
         {
             db.SmsTemplates.Add(new SmsTemplate { TemplateKey = "service-info", ContentTR = "{TourDate} tarihli Viking Oludeniz Tekne Turu servis bilgilendirme mesajidir. Servis Fethiye Merkez icin 08:15 - 09:00 arasi, Ovacik icin 09:00 - 09:30 arasi otelinizin onunden sizi alacaktir. Lutfen ilgili saatte otel kapisinda hazir bulununuz.", IsActive = true, UpdatedAt = DateTime.UtcNow });
+        }
+        if (!await db.SmsTemplates.AnyAsync(t => t.TemplateKey == "ticket-desk"))
+        {
+            db.SmsTemplates.Add(new SmsTemplate { TemplateKey = "ticket-desk", ContentTR = "{TourDate}'li Viking Ölüdeniz Tekne Turu biletiniz oluşturulmuştur. Lütfen aşağıdaki linkten yolcu kaydınızı oluşturunuz. {DeskUrl}", IsActive = true, UpdatedAt = DateTime.UtcNow });
         }
         await db.SaveChangesAsync();
     }
@@ -273,6 +288,8 @@ if (!string.IsNullOrEmpty(conn))
     {
         db.Settings.Add(new Setting { Key = "MarketingServices", Value = "", UpdatedAt = DateTime.UtcNow });
     }
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingServicesEn"))
+        db.Settings.Add(new Setting { Key = "MarketingServicesEn", Value = "", UpdatedAt = DateTime.UtcNow });
     if (!await db.Settings.AnyAsync(s => s.Key == "MarketingPrice"))
     {
         db.Settings.Add(new Setting { Key = "MarketingPrice", Value = "", UpdatedAt = DateTime.UtcNow });
@@ -297,6 +314,8 @@ if (!string.IsNullOrEmpty(conn))
         db.Settings.Add(new Setting { Key = "MarketingServiceLocationMapEmbedUrl", Value = "", UpdatedAt = DateTime.UtcNow });
     if (!await db.Settings.AnyAsync(s => s.Key == "MarketingRedbookUrl"))
         db.Settings.Add(new Setting { Key = "MarketingRedbookUrl", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "DeskRegistrationUrl"))
+        db.Settings.Add(new Setting { Key = "DeskRegistrationUrl", Value = "https://vikingoludeniz.xyz/desk", UpdatedAt = DateTime.UtcNow });
     await db.SaveChangesAsync();
 
     await db.Database.ExecuteSqlRawAsync(@"
@@ -411,6 +430,7 @@ catch (Exception)
     // DB bağlantısı veya tablo yoksa atla
 }
 
+app.UseForwardedHeaders();
 app.UseCors();
 
 // wwwroot ve uploads klasörünü static dosya olarak sun
@@ -1223,7 +1243,7 @@ adminGroup.MapGet("/tickets/{id:int}", async (int id, AppDbContext db, Cancellat
         .FirstOrDefaultAsync(ct);
     return t == null ? Results.NotFound() : Results.Ok(t);
 });
-adminGroup.MapPost("/tickets", async (HttpRequest request, AppDbContext db, TicketService ticketService, CancellationToken ct) =>
+adminGroup.MapPost("/tickets", async (HttpRequest request, AppDbContext db, TicketService ticketService, SmsService sms, CancellationToken ct) =>
 {
     var body = await request.ReadFromJsonAsync<Dictionary<string, JsonElement>>(cancellationToken: ct);
     if (body == null) return Results.BadRequest(new { error = "Geçersiz istek." });
@@ -1270,6 +1290,24 @@ adminGroup.MapPost("/tickets", async (HttpRequest request, AppDbContext db, Tick
     catch (Exception ex)
     {
         return Results.Json(new { error = "Bilet görseli oluşturulamadı: " + ex.Message }, statusCode: 500);
+    }
+
+    try
+    {
+        var settings = await db.Settings.AsNoTracking().ToDictionaryAsync(s => s.Key, s => s.Value, ct);
+        settings.TryGetValue("DeskRegistrationUrl", out var deskUrlRaw);
+        var deskUrl = string.IsNullOrWhiteSpace(deskUrlRaw) ? "https://vikingoludeniz.xyz/desk" : deskUrlRaw.Trim();
+        var tourDateTr = ticket.TourDate.ToString("d", CultureInfo.GetCultureInfo("tr-TR"));
+        await sms.SendWithTemplateAsync(
+            ticket.Phone,
+            "ticket-desk",
+            new Dictionary<string, string> { ["TourDate"] = tourDateTr, ["DeskUrl"] = deskUrl },
+            customerId: null,
+            ct);
+    }
+    catch
+    {
+        // SMS hatası bilet kesmeyi geri almaz; SmsDeliveryLog üzerinden izlenir
     }
 
     return Results.Ok(new { id = ticket.Id, ticketNumber = ticket.TicketNumber, filePath = ticket.FilePath });
@@ -1787,6 +1825,7 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
 
     settings.TryGetValue("MarketingBannerUrl", out var bannerUrl);
     settings.TryGetValue("MarketingServices", out var services);
+    settings.TryGetValue("MarketingServicesEn", out var servicesEn);
     settings.TryGetValue("MarketingPrice", out var price);
     settings.TryGetValue("MarketingVideoUrl", out var videoUrl);
     settings.TryGetValue("MarketingGalleryJson", out var galleryJson);
@@ -1847,6 +1886,7 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
         departureMapUrl,
         stops.Select(s => new LandingStopDto(s.Name, s.Description, ToAbsolute(s.ImageUrl))).ToList(),
         services,
+        servicesEn,
         price,
         ToAbsolute(bannerUrl),
         gallery,

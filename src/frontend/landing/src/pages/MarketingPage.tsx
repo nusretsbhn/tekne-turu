@@ -153,6 +153,7 @@ export function MarketingPage() {
   }
   const bannerUrl = resolveUrl(data.bannerUrl) || `${window.location.origin}/banner.jpg`
   const t = I18N[lang]
+  const servicesText = lang === 'en' ? (data.servicesEn?.trim() || data.services) : data.services
   const barPdfUrl = lang === 'en' ? (resolveUrl(data.barMenuPdfUrlEn) || resolveUrl(data.barMenuPdfUrl)) : resolveUrl(data.barMenuPdfUrl)
   const rulesPdfUrl = lang === 'en' ? (resolveUrl(data.rulesPdfUrlEn) || resolveUrl(data.rulesPdfUrl)) : resolveUrl(data.rulesPdfUrl)
   const socialLinks = [
@@ -282,10 +283,10 @@ export function MarketingPage() {
           </section>
         )}
 
-        {data.services && (
+        {servicesText && (
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>{t.services}</h2>
-            <p style={styles.text}>{data.services}</p>
+            <p style={styles.text}>{servicesText}</p>
           </section>
         )}
 

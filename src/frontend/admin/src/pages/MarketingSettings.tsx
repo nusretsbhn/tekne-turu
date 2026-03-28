@@ -5,6 +5,7 @@ import { fetchSettings, updateSettings, uploadFile } from '../api'
 const KEYS = [
   'MarketingBannerUrl',
   'MarketingServices',
+  'MarketingServicesEn',
   'MarketingPrice',
   'MarketingVideoUrl',
   'MarketingGoogleReviewsUrl',
@@ -152,6 +153,16 @@ export function MarketingSettings() {
             onChange={(e) => setValues((v) => ({ ...v, MarketingServices: e.target.value }))}
             rows={4}
             placeholder="Tura dahil hizmetleri yazın..."
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Hizmetler (İngilizce)</label>
+          <textarea
+            value={values.MarketingServicesEn ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, MarketingServicesEn: e.target.value }))}
+            rows={4}
+            placeholder="English text for the Services section on the English landing page..."
           />
         </div>
 

@@ -2,6 +2,18 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { fetchSmsTemplates, updateSmsTemplate, fetchCustomers, sendBulkSms, type SmsTemplateItem, type CustomerListItem } from '../api'
 
+const SMS_TEMPLATE_TITLES: Record<string, string> = {
+  'booking-confirmation': 'Rezervasyon onayı',
+  'tour-end-thanks': 'Tur sonu teşekkür',
+  'service-info': 'Servis bilgilendirme',
+  'ticket-desk': 'Bilet kes — Desk yolcu kaydı',
+}
+
+const SMS_TEMPLATE_HINTS: Record<string, string> = {
+  'ticket-desk':
+    'Yer tutucular: {TourDate} (tur tarihi, örn. 28.03.2026), {DeskUrl} (Ayarlar → Desk kayıt sayfası URL). Metni buradan düzenleyebilirsiniz.',
+}
+
 export function Sms() {
   const { token } = useAuth()
   const [templates, setTemplates] = useState<SmsTemplateItem[]>([])
@@ -84,14 +96,23 @@ export function Sms() {
 
       {tab === 'templates' && (
         <>
+          <p style={{ marginBottom: 16, color: 'var(--color-text-muted)', fontSize: 14, maxWidth: 720 }}>
+            Bilet kesildikten sonra gönderilen SMS, <strong>ticket-desk</strong> şablonundan gider. Link adresini <strong>Ayarlar → Desk kayıt sayfası URL</strong> ile değiştirebilirsiniz.
+          </p>
           {loading && <p>Yükleniyor...</p>}
           {!loading && templates.length === 0 && <p style={{ color: '#666' }}>Şablon yok.</p>}
           {!loading && templates.map((t) => (
             <div key={t.id} className="card card-md" style={{ marginBottom: 24 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <strong>{t.templateKey}</strong>
+                <div>
+                  <strong>{SMS_TEMPLATE_TITLES[t.templateKey] ?? t.templateKey}</strong>
+                  <span style={{ display: 'block', fontSize: 12, fontWeight: 400, color: 'var(--color-text-muted)', marginTop: 4 }}>{t.templateKey}</span>
+                </div>
                 {editingId !== t.id && <button type="button" onClick={() => startEdit(t)} className="btn btn-secondary btn-sm">Düzenle</button>}
               </div>
+              {SMS_TEMPLATE_HINTS[t.templateKey] && (
+                <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 12 }}>{SMS_TEMPLATE_HINTS[t.templateKey]}</p>
+              )}
               {editingId === t.id ? (
                 <div>
                   <div className="form-group">
