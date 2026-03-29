@@ -2,6 +2,7 @@ namespace TekneTuru.API.Models;
 
 public record LandingDataDto(
     string CustomerName,
+    DateOnly TourDate,
     LandingTourDto? Tour,
     List<LandingStopDto> Stops,
     string? MenuPdfTr,

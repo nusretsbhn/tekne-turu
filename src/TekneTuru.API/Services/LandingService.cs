@@ -111,6 +111,7 @@ public class LandingService
 
         return new LandingDataDto(
             booking.Customer.FullName,
+            booking.TourDate,
             tourDto,
             stopDtos,
             menuTr,

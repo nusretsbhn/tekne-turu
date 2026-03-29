@@ -42,8 +42,8 @@ export type ServiceListItem = {
   fullName: string
   phone: string | null
   hotel: string | null
-  personCount: number
   pickupTime: string | null
+  agencyName: string | null
 }
 
 export async function fetchServiceList(token: string, date?: string): Promise<ServiceListItem[]> {

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using TekneTuru.API.Data;
 using TekneTuru.API.Models;
@@ -45,6 +46,38 @@ public class BookingService
 
         if (errors.Count > 0)
             return (false, string.Join(" ", errors), null);
+
+        // Aynı tur günü + aynı ad soyad + aynı telefon: ikinci kayıt yok (telefon boşsa bu kural uygulanmaz).
+        var batchSeen = new HashSet<(string NameNorm, string PhoneNorm)>();
+        foreach (var p in persons)
+        {
+            var phoneNorm = NormalizePhoneDigits(p.Phone);
+            if (string.IsNullOrEmpty(phoneNorm)) continue;
+            var nameNorm = NormalizeName(p.FullName);
+            if (!batchSeen.Add((nameNorm, phoneNorm)))
+                return (false, "Aynı kayıtta aynı ad soyad ve telefonla birden fazla kişi eklenemez.", null);
+        }
+
+        var existingRows = await _db.DailyBookings
+            .AsNoTracking()
+            .Where(b => b.TourDate == date)
+            .Select(b => new { b.Customer!.FullName, b.Customer!.Phone })
+            .ToListAsync(ct);
+        var existingNamePhone = new HashSet<(string NameNorm, string PhoneNorm)>();
+        foreach (var row in existingRows)
+        {
+            var pn = NormalizePhoneDigits(row.Phone);
+            if (string.IsNullOrEmpty(pn)) continue;
+            existingNamePhone.Add((NormalizeName(row.FullName), pn));
+        }
+
+        foreach (var p in persons)
+        {
+            var phoneNorm = NormalizePhoneDigits(p.Phone);
+            if (string.IsNullOrEmpty(phoneNorm)) continue;
+            if (existingNamePhone.Contains((NormalizeName(p.FullName), phoneNorm)))
+                return (false, "Bu tur tarihi için bu ad soyad ve telefonla kayıt zaten mevcut.", null);
+        }
 
         var bookingIds = new List<int>();
         var newBookings = new List<DailyBooking>();
@@ -130,7 +163,7 @@ public class BookingService
                         new Dictionary<string, string>
                         {
                             ["Name"] = b.Customer.FullName ?? "",
-                            ["TourDate"] = date.ToString("dd.MM.yyyy"),
+                            ["TourDate"] = b.TourDate.ToString("dd.MM.yyyy"),
                             ["LandingUrl"] = landingUrl
                         },
                         b.Customer.Id,
@@ -151,7 +184,7 @@ public class BookingService
                             new Dictionary<string, string>
                             {
                                 ["Name"] = b.Customer.FullName ?? "",
-                                ["TourDate"] = date.ToString("dd.MM.yyyy"),
+                                ["TourDate"] = b.TourDate.ToString("dd.MM.yyyy"),
                                 ["ServicePickupTime"] = b.ServicePickupTime ?? ""
                             },
                             b.Customer.Id,
@@ -257,6 +290,14 @@ public class BookingService
         var p = new string(phone.Where(char.IsDigit).ToArray());
         if (p.Length >= 10 && p.StartsWith('0')) p = p[1..];
         return p;
+    }
+
+    private static string NormalizeName(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "";
+        var parts = fullName.Trim().Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+        var joined = string.Join(" ", parts);
+        return joined.ToLower(new CultureInfo("tr-TR"));
     }
 
     public async Task<(List<BookingListItemDto> List, BookingSummaryDto Summary)> GetBookingsForDateAsync(

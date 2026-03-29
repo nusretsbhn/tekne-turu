@@ -242,22 +242,18 @@ public class AdminService
             .ThenBy(b => b.Id)
             .ToListAsync(ct);
 
-        var groups = bookings
-            .GroupBy(b => new { PickupTime = b.ServicePickupTime ?? "", AgencyName = b.AgencyName ?? "" })
-            .Select(g =>
+        return bookings
+            .Select(b =>
             {
-                var first = g.First();
-                var c = first.Customer;
+                var c = b.Customer;
                 return new ServiceListItemDto(
                     c?.FullName ?? "",
                     c?.Phone,
                     c?.AccommodationPlace,
-                    g.Count(),
-                    first.ServicePickupTime
+                    b.ServicePickupTime,
+                    b.AgencyName
                 );
             })
             .ToList();
-
-        return groups;
     }
 }

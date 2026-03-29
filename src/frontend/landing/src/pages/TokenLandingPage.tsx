@@ -154,7 +154,16 @@ export function TokenLandingPage() {
         <div style={styles.heroOverlay} aria-hidden />
         <div style={styles.heroContent}>
           <h1 style={styles.heroTitle}>{data.tour?.title ?? (t ? 'Tekne Turu' : 'Boat Tour')}</h1>
-          <p style={styles.heroSub}>{new Date().toLocaleDateString(lang === 'tr' ? 'tr-TR' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          {data.tourDate && (
+            <p style={styles.heroSub}>
+              {new Date(data.tourDate + 'T12:00:00').toLocaleDateString(lang === 'tr' ? 'tr-TR' : 'en-GB', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </p>
+          )}
           {data.customerName && <p style={styles.heroName}>{t ? 'Hoş geldiniz,' : 'Welcome,'} {data.customerName}</p>}
         </div>
       </section>

@@ -1699,7 +1699,7 @@ app.MapGet("/api/landing/data", async (string? token, LandingService landing, Ht
     string? ToAbsolute(string? url) => string.IsNullOrEmpty(url) ? url : url.StartsWith("/", StringComparison.Ordinal) ? baseUrl + url : url;
     var stopsWithAbs = data.Stops.Select(s => new LandingStopDto(s.Name, s.Description, ToAbsolute(s.ImageUrl))).ToList();
     var tourWithAbs = data.Tour == null ? null : new LandingTourDto(data.Tour.Title, data.Tour.Description, data.Tour.StartTime, data.Tour.EndTime, data.Tour.DurationMinutes, data.Tour.DeparturePoint, ToAbsolute(data.Tour.ImageUrl));
-    var dto = new LandingDataDto(data.CustomerName, tourWithAbs, stopsWithAbs, ToAbsolute(data.MenuPdfTr), ToAbsolute(data.MenuPdfEn), ToAbsolute(data.RulesPdfTr), ToAbsolute(data.RulesPdfEn), data.InstagramUrl, data.GoogleReviewsUrl, data.TripAdvisorUrl);
+    var dto = new LandingDataDto(data.CustomerName, data.TourDate, tourWithAbs, stopsWithAbs, ToAbsolute(data.MenuPdfTr), ToAbsolute(data.MenuPdfEn), ToAbsolute(data.RulesPdfTr), ToAbsolute(data.RulesPdfEn), data.InstagramUrl, data.GoogleReviewsUrl, data.TripAdvisorUrl);
     return Results.Ok(dto);
 });
 

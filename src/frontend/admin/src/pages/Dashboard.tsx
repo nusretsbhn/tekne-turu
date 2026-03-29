@@ -50,14 +50,14 @@ export function Dashboard() {
         { text: 'Ad Soyad', style: 'tableHeader' },
         { text: 'Telefon', style: 'tableHeader' },
         { text: 'Otel', style: 'tableHeader' },
-        { text: 'Kişi', style: 'tableHeader', alignment: 'right' as const },
+        { text: 'Acenta', style: 'tableHeader' },
         { text: 'Alınış Saati', style: 'tableHeader' },
       ],
       ...serviceList.map((row) => ([
         row.fullName || '—',
         row.phone || '—',
         row.hotel || '—',
-        { text: String(row.personCount ?? 0), alignment: 'right' as const },
+        row.agencyName || '—',
         row.pickupTime || '—',
       ])),
     ]
@@ -247,7 +247,7 @@ export function Dashboard() {
                       <th>Ad Soyad</th>
                       <th>Telefon</th>
                       <th>Otel</th>
-                      <th style={{ textAlign: 'right' }}>Kişi</th>
+                      <th>Acenta</th>
                       <th>Alınış Saati</th>
                     </tr>
                   </thead>
@@ -257,7 +257,7 @@ export function Dashboard() {
                         <td>{row.fullName}</td>
                         <td>{row.phone ?? '—'}</td>
                         <td>{row.hotel ?? '—'}</td>
-                        <td style={{ textAlign: 'right' }}>{row.personCount}</td>
+                        <td>{row.agencyName ?? '—'}</td>
                         <td>{row.pickupTime ?? '—'}</td>
                       </tr>
                     ))}

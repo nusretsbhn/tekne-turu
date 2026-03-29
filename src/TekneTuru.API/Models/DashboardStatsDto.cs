@@ -21,4 +21,5 @@ public record FutureDayCountDto(string Date, int RegisteredCount);
 
 public record TodayCustomerDto(string FullName, string? Phone, bool CheckedIn, string? AgencyName);
 
-public record ServiceListItemDto(string FullName, string? Phone, string? Hotel, int PersonCount, string? PickupTime);
+/// <summary>Servis listesi: her günlük rezervasyon (yolcu) için bir satır.</summary>
+public record ServiceListItemDto(string FullName, string? Phone, string? Hotel, string? PickupTime, string? AgencyName);

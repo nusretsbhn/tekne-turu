@@ -1,5 +1,7 @@
 export type LandingData = {
   customerName: string
+  /** ISO yyyy-MM-dd — tur tarihi (rezervasyonun yapıldığı gün değil) */
+  tourDate?: string
   tour: {
     title: string
     description: string | null
