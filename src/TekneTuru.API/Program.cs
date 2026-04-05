@@ -1452,6 +1452,9 @@ adminGroup.MapDelete("/agencies/{id:int}", async (int id, AppDbContext db, Cance
     if (hasBooking)
         return Results.BadRequest(new { error = "Bu acentaya ait kayıtlar bulunduğu için silinemez." });
 
+    var agencyUsers = await db.Users.Where(u => u.AgencyId == id).ToListAsync(ct);
+    foreach (var u in agencyUsers)
+        db.Users.Remove(u);
     db.Agencies.Remove(a);
     await db.SaveChangesAsync(ct);
     return Results.Ok(new { id });

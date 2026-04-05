@@ -22,6 +22,8 @@ export function AcentaKaydi() {
   const [editForm, setEditForm] = useState({ name: '', contactFullName: '', phone: '', email: '' })
   const [rowBusyId, setRowBusyId] = useState<number | null>(null)
   const [listFilters, setListFilters] = useState({ name: '', contact: '', phone: '' })
+  /** Form dışı (liste sil/düzenle) mesajları — üstteki yeşil kutuya bağlı kalmaz */
+  const [listMessage, setListMessage] = useState('')
   const [baseUrl, setBaseUrl] = useState(
     import.meta.env.PROD ? '/acenta/' : 'http://localhost:5176',
   )
@@ -125,11 +127,11 @@ export function AcentaKaydi() {
   const saveEdit = async (id: number) => {
     if (!token) return
     if (!editForm.name.trim() || !editForm.contactFullName.trim() || !editForm.phone.trim()) {
-      setMessage('Acenta adı, yetkili ve telefon zorunludur.')
+      setListMessage('Acenta adı, yetkili ve telefon zorunludur.')
       return
     }
     setRowBusyId(id)
-    setMessage('')
+    setListMessage('')
     try {
       await updateAgency(token, id, {
         name: editForm.name.trim(),
@@ -138,10 +140,10 @@ export function AcentaKaydi() {
         email: editForm.email.trim() || null,
       })
       setEditingId(null)
-      setMessage('Acenta güncellendi.')
+      setListMessage('Acenta güncellendi.')
       loadAgencies()
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Güncellenemedi.')
+      setListMessage(err instanceof Error ? err.message : 'Güncellenemedi.')
     } finally {
       setRowBusyId(null)
     }
@@ -151,14 +153,14 @@ export function AcentaKaydi() {
     if (!token) return
     if (!window.confirm(`"${a.name}" acentasını silmek istiyor musunuz?`)) return
     setRowBusyId(a.id)
-    setMessage('')
+    setListMessage('')
     try {
       await deleteAgency(token, a.id)
-      setMessage('Acenta silindi.')
+      setListMessage('Acenta ve giriş hesabı silindi.')
       if (editingId === a.id) setEditingId(null)
       loadAgencies()
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Silinemedi.')
+      setListMessage(err instanceof Error ? err.message : 'Silinemedi.')
     } finally {
       setRowBusyId(null)
     }
@@ -267,6 +269,11 @@ export function AcentaKaydi() {
         <p style={{ marginBottom: 16, color: 'var(--color-text-muted)' }}>
           Kayıtlı acentalar ve Desk-Acenta linkleri. Linki kopyalayıp acentaya gönderin.
         </p>
+        {listMessage && (
+          <p className={listMessage.includes('silindi') || listMessage.includes('güncellendi') ? 'msg-success' : 'msg-error'} style={{ marginBottom: 12 }}>
+            {listMessage}
+          </p>
+        )}
         {agenciesError && <p className="msg-error">{agenciesError}</p>}
         {agenciesLoading && <p>Yükleniyor...</p>}
         {!agenciesLoading && agencies.length === 0 && (
