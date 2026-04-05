@@ -1442,7 +1442,7 @@ adminGroup.MapPut("/agencies/{id:int}", async (int id, UpdateAgencyRequest body,
     await db.SaveChangesAsync(ct);
     return Results.Ok(new { id = a.Id });
 });
-adminGroup.MapDelete("/agencies/{id:int}", async (int id, AppDbContext db, CancellationToken ct) =>
+async Task<IResult> DeleteAgencyHandler(int id, AppDbContext db, CancellationToken ct)
 {
     var a = await db.Agencies.FindAsync(new object[] { id }, ct);
     if (a == null) return Results.NotFound();
@@ -1458,7 +1458,11 @@ adminGroup.MapDelete("/agencies/{id:int}", async (int id, AppDbContext db, Cance
     db.Agencies.Remove(a);
     await db.SaveChangesAsync(ct);
     return Results.Ok(new { id });
-});
+}
+
+// DELETE: bazı proxy/nginx kurulumlarında engellenebilir; yönetim paneli POST /delete kullanır.
+adminGroup.MapDelete("/agencies/{id:int}", DeleteAgencyHandler);
+adminGroup.MapPost("/agencies/{id:int}/delete", DeleteAgencyHandler);
 
 /// <summary>Seçilen acentanın AgencyName ile eşleşen tüm günlük kayıtları (müşteri satırları).</summary>
 adminGroup.MapGet("/agencies/{id:int}/registrations", async (int id, AppDbContext db, CancellationToken ct) =>

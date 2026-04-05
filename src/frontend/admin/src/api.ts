@@ -636,10 +636,11 @@ export async function updateAgency(
   }
 }
 
+/** Acenta silme — POST kullanır; bazı sunucularda DELETE isteği engellenebiliyor. */
 export async function deleteAgency(token: string, id: number): Promise<void> {
-  const res = await fetch(`/api/admin/agencies/${id}`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
+  const res = await fetch(`/api/admin/agencies/${id}/delete`, {
+    method: 'POST',
+    headers: headers(token),
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({})) as { error?: string }
