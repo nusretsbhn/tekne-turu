@@ -11,7 +11,7 @@ const SMS_TEMPLATE_TITLES: Record<string, string> = {
 
 const SMS_TEMPLATE_HINTS: Record<string, string> = {
   'ticket-desk':
-    'Yer tutucular: {TourDate} (tur tarihi, örn. 28.03.2026), {DeskUrl} (Ayarlar → Desk kayıt sayfası URL). Metni buradan düzenleyebilirsiniz.',
+    'Yer tutucular: {TourDate} (tur tarihi, örn. 28.03.2026), {DeskUrl} (Ayarlar → Desk kayıt sayfası URL), {TicketUrl} (kesilen bilet görsel linki). Metni buradan düzenleyebilirsiniz.',
 }
 
 export function Sms() {

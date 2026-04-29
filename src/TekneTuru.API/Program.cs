@@ -1297,11 +1297,14 @@ adminGroup.MapPost("/tickets", async (HttpRequest request, AppDbContext db, Tick
         var settings = await db.Settings.AsNoTracking().ToDictionaryAsync(s => s.Key, s => s.Value, ct);
         settings.TryGetValue("DeskRegistrationUrl", out var deskUrlRaw);
         var deskUrl = string.IsNullOrWhiteSpace(deskUrlRaw) ? "https://vikingoludeniz.xyz/desk" : deskUrlRaw.Trim();
+        var ticketUrl = string.IsNullOrWhiteSpace(ticket.FilePath)
+            ? ""
+            : $"{request.Scheme}://{request.Host}{ticket.FilePath}";
         var tourDateTr = ticket.TourDate.ToString("d", CultureInfo.GetCultureInfo("tr-TR"));
         await sms.SendWithTemplateAsync(
             ticket.Phone,
             "ticket-desk",
-            new Dictionary<string, string> { ["TourDate"] = tourDateTr, ["DeskUrl"] = deskUrl },
+            new Dictionary<string, string> { ["TourDate"] = tourDateTr, ["DeskUrl"] = deskUrl, ["TicketUrl"] = ticketUrl },
             customerId: null,
             ct);
     }
