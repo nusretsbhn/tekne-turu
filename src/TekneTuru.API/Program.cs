@@ -1297,9 +1297,7 @@ adminGroup.MapPost("/tickets", async (HttpRequest request, AppDbContext db, Tick
         var settings = await db.Settings.AsNoTracking().ToDictionaryAsync(s => s.Key, s => s.Value, ct);
         settings.TryGetValue("DeskRegistrationUrl", out var deskUrlRaw);
         var deskUrl = string.IsNullOrWhiteSpace(deskUrlRaw) ? "https://vikingoludeniz.xyz/desk" : deskUrlRaw.Trim();
-        var ticketUrl = string.IsNullOrWhiteSpace(ticket.FilePath)
-            ? ""
-            : $"{request.Scheme}://{request.Host}{ticket.FilePath}";
+        var ticketUrl = $"{request.Scheme}://{request.Host}/api/tickets/{ticket.Id}/file";
         var tourDateTr = ticket.TourDate.ToString("d", CultureInfo.GetCultureInfo("tr-TR"));
         await sms.SendWithTemplateAsync(
             ticket.Phone,
@@ -1358,6 +1356,17 @@ adminGroup.MapPut("/tickets/{id:int}", async (int id, HttpRequest request, AppDb
     return Results.Ok(new { id = ticket.Id, filePath = ticket.FilePath });
 });
 adminGroup.MapGet("/tickets/{id:int}/file", async (int id, AppDbContext db, IWebHostEnvironment env, CancellationToken ct) =>
+{
+    var filePath = await db.Tickets.AsNoTracking().Where(t => t.Id == id).Select(t => t.FilePath).FirstOrDefaultAsync(ct);
+    if (string.IsNullOrEmpty(filePath)) return Results.NotFound();
+    var path = Path.Combine(env.ContentRootPath, "wwwroot", filePath.TrimStart('/'));
+    if (!System.IO.File.Exists(path)) return Results.NotFound();
+    var fileName = Path.GetFileName(path);
+    return TypedResults.PhysicalFile(path, "image/jpeg", fileName);
+});
+
+// Public ticket image endpoint for SMS links (no auth).
+app.MapGet("/api/tickets/{id:int}/file", async (int id, AppDbContext db, IWebHostEnvironment env, CancellationToken ct) =>
 {
     var filePath = await db.Tickets.AsNoTracking().Where(t => t.Id == id).Select(t => t.FilePath).FirstOrDefaultAsync(ct);
     if (string.IsNullOrEmpty(filePath)) return Results.NotFound();
