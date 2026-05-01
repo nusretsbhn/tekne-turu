@@ -1761,12 +1761,11 @@ app.MapGet("/api/legal/consent", async (AppDbContext db, CancellationToken ct) =
     if (string.IsNullOrWhiteSpace(text))
         text = "Yasal metin henüz tanımlanmadı.";
     var encoded = HtmlEncoder.Default.Encode(text).Replace("\r\n", "\n").Replace("\n", "<br/>");
-    var html = $"""
-<!doctype html>
-<html lang="tr">
+    var html = $@"<!doctype html>
+<html lang=""tr"">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset=""utf-8"" />
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1"" />
   <title>KVKK ve Pazarlama Metni</title>
   <style>
     body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 860px; margin: 24px auto; padding: 0 16px; line-height: 1.55; color: #111; }}
@@ -1776,10 +1775,9 @@ app.MapGet("/api/legal/consent", async (AppDbContext db, CancellationToken ct) =
 </head>
 <body>
   <h1>KVKK ve Pazarlama Izin Metni</h1>
-  <div class="box">{encoded}</div>
+  <div class=""box"">{encoded}</div>
 </body>
-</html>
-""";
+</html>";
     return Results.Content(html, "text/html; charset=utf-8");
 }).AllowAnonymous();
 
