@@ -19,6 +19,7 @@ const KEY_LABELS: Partial<Record<(typeof KEYS)[number], string>> = {
 }
 const THANKS_DESC_KEY = 'ThanksPageDescription'
 const THANKS_SURVEY_KEY = 'ThanksSurveyJson'
+const DESK_CONSENT_KEY = 'DeskConsentText'
 
 type ThanksSurveyQuestion = {
   question: string
@@ -46,6 +47,7 @@ export function Settings() {
   const [values, setValues] = useState<Record<string, string>>({})
   const [thanksDesc, setThanksDesc] = useState('')
   const [thanksSurvey, setThanksSurvey] = useState<ThanksSurveyQuestion[]>(EMPTY_SURVEY)
+  const [deskConsentText, setDeskConsentText] = useState('')
   const [docs, setDocs] = useState<DocumentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [docLoading, setDocLoading] = useState(true)
@@ -60,6 +62,7 @@ export function Settings() {
       const raw = s ?? {}
       setValues(Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v ?? ''])) as Record<string, string>)
       setThanksDesc(raw?.ThanksPageDescription ?? '')
+      setDeskConsentText(raw?.DeskConsentText ?? '')
       try {
         const parsed = JSON.parse(raw?.ThanksSurveyJson ?? '[]') as Partial<ThanksSurveyQuestion>[]
         const normalized = EMPTY_SURVEY.map((q, i) => {
@@ -164,6 +167,23 @@ export function Settings() {
             onChange={(e) => setThanksDesc(e.target.value)}
             rows={4}
             placeholder="Deneyiminizi paylaşın..."
+            style={{ width: '100%', resize: 'vertical' }}
+          />
+        </div>
+        <button type="submit" disabled={saving} className="btn btn-primary">{saving ? 'Kaydediliyor...' : 'Kaydet'}</button>
+      </form>
+
+      <form onSubmit={async (e) => { e.preventDefault(); if (!token) return; setSaving(true); setMessage(''); updateSettings(token, { [DESK_CONSENT_KEY]: deskConsentText?.trim() || null }).then(() => setMessage('Kaydedildi.')).catch(() => setMessage('Hata oluştu.')).finally(() => setSaving(false)); }} style={{ maxWidth: 760, marginBottom: 32 }}>
+        <h2 style={{ fontSize: '1.125rem', marginBottom: 12 }}>Desk KVKK / Pazarlama izin metni</h2>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: 14, marginBottom: 8 }}>
+          Desk kayıt formundaki <strong>KVKK</strong> ve <strong>Pazarlama</strong> linkleri bu metni açar.
+        </p>
+        <div className="form-group">
+          <textarea
+            value={deskConsentText}
+            onChange={(e) => setDeskConsentText(e.target.value)}
+            rows={10}
+            placeholder="Yasal metni buraya girin..."
             style={{ width: '100%', resize: 'vertical' }}
           />
         </div>

@@ -2,6 +2,8 @@ import type { PersonForm } from '../types'
 import { validatePerson } from '../validation'
 import type { AgeCategory, Nationality } from '../types'
 
+const CONSENT_TEXT_URL = '/api/legal/consent'
+
 function birthDateToParts(birthDate: string): { day: string; month: string; year: string } {
   const v = (birthDate ?? '').trim()
   if (!v) return { day: '', month: '', year: '' }
@@ -40,6 +42,7 @@ const styles = {
   required: { color: '#c00', marginLeft: 2 },
   input: { width: '100%', padding: '8px 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 16 },
   checkRow: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 },
+  consentLink: { color: '#0b57d0', textDecoration: 'underline' },
   btnRemove: { padding: '6px 12px', background: '#c00', color: '#fff', border: 0, borderRadius: 6, cursor: 'pointer', fontSize: 14 },
 }
 
@@ -189,11 +192,15 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
           </div>
           <div style={styles.checkRow}>
             <input type="checkbox" id={`kvkk-${person.id}`} checked={person.kvkkConsent} onChange={(e) => onChange({ kvkkConsent: e.target.checked })} required />
-            <label htmlFor={`kvkk-${person.id}`}>KVKK aydınlatma metnini okudum, kabul ediyorum. <span style={styles.labelEn}>/ I accept the KVKK.</span> <span style={styles.required}>*</span></label>
+            <label htmlFor={`kvkk-${person.id}`}>
+              <a href={CONSENT_TEXT_URL} target="_blank" rel="noopener noreferrer" style={styles.consentLink} onClick={(e) => e.stopPropagation()}>KVKK</a> aydınlatma metnini okudum, kabul ediyorum. <span style={styles.labelEn}>/ I accept the KVKK.</span> <span style={styles.required}>*</span>
+            </label>
           </div>
           <div style={styles.checkRow}>
             <input type="checkbox" id={`sms-${person.id}`} checked={person.smsConsent} onChange={(e) => onChange({ smsConsent: e.target.checked })} required />
-            <label htmlFor={`sms-${person.id}`}>Pazarlama ve bilgilendirme SMS’leri almak istiyorum. <span style={styles.labelEn}>/ I agree to receive SMS.</span> <span style={styles.required}>*</span></label>
+            <label htmlFor={`sms-${person.id}`}>
+              <a href={CONSENT_TEXT_URL} target="_blank" rel="noopener noreferrer" style={styles.consentLink} onClick={(e) => e.stopPropagation()}>Pazarlama</a> ve bilgilendirme SMS’leri almak istiyorum. <span style={styles.labelEn}>/ I agree to receive SMS.</span> <span style={styles.required}>*</span>
+            </label>
           </div>
           {canRemove && <button type="button" style={styles.btnRemove} onClick={onRemove}>Kişiyi Kaldır</button>}
         </div>

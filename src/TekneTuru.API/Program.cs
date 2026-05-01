@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Security.Claims;
@@ -316,6 +317,8 @@ if (!string.IsNullOrEmpty(conn))
         db.Settings.Add(new Setting { Key = "MarketingRedbookUrl", Value = "", UpdatedAt = DateTime.UtcNow });
     if (!await db.Settings.AnyAsync(s => s.Key == "DeskRegistrationUrl"))
         db.Settings.Add(new Setting { Key = "DeskRegistrationUrl", Value = "https://vikingoludeniz.xyz/desk", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "DeskConsentText"))
+        db.Settings.Add(new Setting { Key = "DeskConsentText", Value = "KVKK ve pazarlama izin metnini buradan düzenleyebilirsiniz.", UpdatedAt = DateTime.UtcNow });
     await db.SaveChangesAsync();
 
     await db.Database.ExecuteSqlRawAsync(@"
@@ -1750,6 +1753,34 @@ app.MapGet("/api/landing/thanks-settings", async (AppDbContext db, CancellationT
     dict.TryGetValue("ThanksPageDescription", out var thanksPageDescription);
     dict.TryGetValue("ThanksSurveyJson", out var thanksSurveyJson);
     return Results.Ok(new { instagramUrl, googleReviewsUrl, tripAdvisorUrl, thanksPageDescription, thanksSurveyJson });
+}).AllowAnonymous();
+
+app.MapGet("/api/legal/consent", async (AppDbContext db, CancellationToken ct) =>
+{
+    var text = (await db.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == "DeskConsentText", ct))?.Value?.Trim();
+    if (string.IsNullOrWhiteSpace(text))
+        text = "Yasal metin henüz tanımlanmadı.";
+    var encoded = HtmlEncoder.Default.Encode(text).Replace("\r\n", "\n").Replace("\n", "<br/>");
+    var html = $"""
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KVKK ve Pazarlama Metni</title>
+  <style>
+    body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 860px; margin: 24px auto; padding: 0 16px; line-height: 1.55; color: #111; }}
+    h1 {{ font-size: 1.35rem; margin-bottom: 16px; }}
+    .box {{ border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #fff; white-space: normal; }}
+  </style>
+</head>
+<body>
+  <h1>KVKK ve Pazarlama Izin Metni</h1>
+  <div class="box">{encoded}</div>
+</body>
+</html>
+""";
+    return Results.Content(html, "text/html; charset=utf-8");
 }).AllowAnonymous();
 
 app.MapGet("/api/agency-by-code", async (string? code, AppDbContext db, CancellationToken ct) =>
