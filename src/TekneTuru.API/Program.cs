@@ -1213,6 +1213,16 @@ adminGroup.MapPut("/prereservations/{id:int}", async (int id, Dictionary<string,
     return Results.Ok(new { id = p.Id });
 });
 
+// DELETE yerine POST /delete: bazı proxy ortamlarda DELETE engellenebiliyor.
+adminGroup.MapPost("/prereservations/{id:int}/delete", async (int id, AppDbContext db, CancellationToken ct) =>
+{
+    var p = await db.PreReservations.FindAsync(new object[] { id }, ct);
+    if (p == null) return Results.NotFound();
+    db.PreReservations.Remove(p);
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new { success = true });
+});
+
 // --- Biletler ---
 adminGroup.MapGet("/tickets/next-number", async (TicketService ticketService, CancellationToken ct) =>
 {

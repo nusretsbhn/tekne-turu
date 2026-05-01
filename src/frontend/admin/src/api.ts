@@ -455,6 +455,17 @@ export async function updatePreReservation(
   }
 }
 
+export async function deletePreReservation(token: string, id: number): Promise<void> {
+  const res = await fetch(`/api/admin/prereservations/${id}/delete`, {
+    method: 'POST',
+    headers: headers(token),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(data?.error ?? 'Silinemedi')
+  }
+}
+
 export async function fetchPreReservationNewCount(token: string): Promise<{ count: number }> {
   const res = await apiGet(token, '/api/admin/prereservations/new-count')
   return res.json()

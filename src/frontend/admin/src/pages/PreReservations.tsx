@@ -5,6 +5,7 @@ import {
   fetchPreReservations,
   fetchPreReservation,
   updatePreReservation,
+  deletePreReservation,
   type PreReservationItem,
   type PreReservationDetail,
 } from '../api'
@@ -27,6 +28,7 @@ export function PreReservations() {
   const [detail, setDetail] = useState<PreReservationDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [savingDetail, setSavingDetail] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   const load = () => {
     if (!token) return
@@ -95,6 +97,22 @@ export function PreReservations() {
     }
   }
 
+  const handleDelete = async (id: number) => {
+    if (!token) return
+    const ok = window.confirm('Bu ön rezervasyon talebini silmek istediğinize emin misiniz?')
+    if (!ok) return
+    setDeletingId(id)
+    try {
+      await deletePreReservation(token, id)
+      if (detailId === id) closeDetail()
+      load()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Silinemedi.')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   const formatDate = (s: string) => new Date(s).toLocaleString('tr-TR')
 
   return (
@@ -160,6 +178,14 @@ export function PreReservations() {
                   </button>
                   <button type="button" onClick={() => openDetail(p.id)} className="btn btn-secondary btn-sm">
                     Detay
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(p.id)}
+                    className="btn btn-secondary btn-sm"
+                    disabled={deletingId === p.id}
+                  >
+                    {deletingId === p.id ? 'Siliniyor...' : 'Sil'}
                   </button>
                 </td>
               </tr>
