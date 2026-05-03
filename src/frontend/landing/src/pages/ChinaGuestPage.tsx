@@ -41,7 +41,7 @@ const COPY: Record<Lang, Copy> = {
     stops: 'Stops',
     gallery: 'Tour photos',
     video: 'Tour video',
-    barMenu: 'Bar menu',
+    barMenu: 'Bar menu & prices',
     boatRules: 'Boat rules',
     openPdf: 'Open PDF',
     docHint: 'Same PDF files as uploaded in the admin panel (opens in a new tab).',

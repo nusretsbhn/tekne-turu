@@ -73,7 +73,7 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
         <div style={styles.body} onClick={(e) => e.stopPropagation()}>
           <div style={styles.full}>
             <label style={styles.label}>
-              Tur Tarihi <span style={styles.labelEn}>/ Tour Date</span> <span style={styles.required}>*</span>
+              Tura Gidilecek Tarih <span style={styles.labelEn}>/ Date of the tour</span> <span style={styles.required}>*</span>
             </label>
             <input
               type="date"

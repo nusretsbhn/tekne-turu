@@ -517,6 +517,31 @@ bookingGroup.MapPost("/bulk-check-in", async (BulkCheckInRequest body, BookingSe
     return Results.Ok(new { success = true, count });
 });
 
+/// <summary>JSON body <c>Dictionary&lt;string, object?&gt;</c> değerleri çoğu zaman <see cref="JsonElement"/>; <c>is string</c> ile kaçırılmamalı.</summary>
+static string? CoerceJsonBodyValueToString(object? o)
+{
+    if (o == null) return null;
+    if (o is string s) return s;
+    if (o is JsonElement je)
+    {
+        return je.ValueKind switch
+        {
+            JsonValueKind.String => je.GetString(),
+            JsonValueKind.Null => null,
+            _ => je.GetRawText()
+        };
+    }
+    return o.ToString();
+}
+
+static bool TryParseDateOnlyFromJsonBodyValue(object? o, out DateOnly d)
+{
+    d = default;
+    var text = CoerceJsonBodyValueToString(o);
+    if (string.IsNullOrWhiteSpace(text)) return false;
+    return DateOnly.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out d);
+}
+
 static async Task<(User? User, Agency? Agency, IResult? Error)> ResolveAcentaContextAsync(AppDbContext db, HttpContext http, CancellationToken ct)
 {
     var userIdText = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -825,10 +850,13 @@ adminGroup.MapPatch("/bookings/{id:int}", async (int id, Dictionary<string, obje
     if (b == null) return Results.NotFound();
     if (body != null)
     {
-        if (body.TryGetValue("tourDate", out var td) && td != null && td is string s && DateOnly.TryParse(s, out var newDate))
+        if (body.TryGetValue("tourDate", out var td) && TryParseDateOnlyFromJsonBodyValue(td, out var newDate))
             b.TourDate = newDate;
         if (body.TryGetValue("agencyName", out var an))
-            b.AgencyName = an == null ? null : (an is string a ? a.Trim() : an.ToString()?.Trim());
+        {
+            var t = CoerceJsonBodyValueToString(an)?.Trim();
+            b.AgencyName = string.IsNullOrEmpty(t) ? null : t;
+        }
     }
     await db.SaveChangesAsync(ct);
     return Results.Ok(new { id = b.Id });

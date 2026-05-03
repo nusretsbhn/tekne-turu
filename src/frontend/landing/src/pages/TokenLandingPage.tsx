@@ -196,7 +196,7 @@ export function TokenLandingPage() {
       )}
 
       <section style={styles.section}>
-        <h2 style={styles.sectionTitle}>{t ? 'Bar menüsü' : 'Bar menu'}</h2>
+        <h2 style={styles.sectionTitle}>{t ? 'Bar Menüsü ve Fiyatlarımız' : 'Bar menu & prices'}</h2>
         {menuPdfUrl ? (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
             <button type="button" onClick={() => setPdfPopup('menu')} style={styles.linkBtn}>{t ? 'Menüyü görüntüle' : 'View menu'}</button>
@@ -248,7 +248,7 @@ export function TokenLandingPage() {
           onClick={() => setPdfPopup(null)}
           role="dialog"
           aria-modal="true"
-          aria-label={pdfPopup === 'menu' ? (t ? 'Bar menüsü' : 'Bar menu') : (t ? 'Tekne kuralları' : 'Boat rules')}
+          aria-label={pdfPopup === 'menu' ? (t ? 'Bar Menüsü ve Fiyatlarımız' : 'Bar menu & prices') : (t ? 'Tekne kuralları' : 'Boat rules')}
         >
           <div
             style={{
@@ -266,7 +266,7 @@ export function TokenLandingPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ padding: '12px 16px', background: '#f5f5f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-              <strong>{pdfPopup === 'menu' ? (t ? 'Bar menüsü' : 'Bar menu') : (t ? 'Tekne kuralları' : 'Boat rules')}</strong>
+              <strong>{pdfPopup === 'menu' ? (t ? 'Bar Menüsü ve Fiyatlarımız' : 'Bar menu & prices') : (t ? 'Tekne kuralları' : 'Boat rules')}</strong>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   type="button"
@@ -279,7 +279,7 @@ export function TokenLandingPage() {
               </div>
             </div>
             <iframe
-              title={pdfPopup === 'menu' ? (t ? 'Bar menüsü PDF' : 'Bar menu PDF') : (t ? 'Tekne kuralları PDF' : 'Boat rules PDF')}
+              title={pdfPopup === 'menu' ? (t ? 'Bar Menüsü ve Fiyatlarımız PDF' : 'Bar menu & prices PDF') : (t ? 'Tekne kuralları PDF' : 'Boat rules PDF')}
               src={pdfPopup === 'menu' ? menuPdfUrl : rulesPdfUrl}
               style={{ flex: 1, width: '100%', border: 'none', minHeight: 400 }}
             />
