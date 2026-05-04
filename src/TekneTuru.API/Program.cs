@@ -295,6 +295,16 @@ if (!string.IsNullOrEmpty(conn))
     {
         db.Settings.Add(new Setting { Key = "MarketingPrice", Value = "", UpdatedAt = DateTime.UtcNow });
     }
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingPriceAdult"))
+        db.Settings.Add(new Setting { Key = "MarketingPriceAdult", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingPriceChild"))
+        db.Settings.Add(new Setting { Key = "MarketingPriceChild", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingPriceBaby"))
+        db.Settings.Add(new Setting { Key = "MarketingPriceBaby", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingPriceValidFrom"))
+        db.Settings.Add(new Setting { Key = "MarketingPriceValidFrom", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingPriceValidTo"))
+        db.Settings.Add(new Setting { Key = "MarketingPriceValidTo", Value = "", UpdatedAt = DateTime.UtcNow });
     if (!await db.Settings.AnyAsync(s => s.Key == "MarketingVideoUrl"))
     {
         db.Settings.Add(new Setting { Key = "MarketingVideoUrl", Value = "", UpdatedAt = DateTime.UtcNow });
@@ -1912,7 +1922,12 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
     settings.TryGetValue("MarketingBannerUrl", out var bannerUrl);
     settings.TryGetValue("MarketingServices", out var services);
     settings.TryGetValue("MarketingServicesEn", out var servicesEn);
-    settings.TryGetValue("MarketingPrice", out var price);
+    settings.TryGetValue("MarketingPrice", out var legacyPriceRaw);
+    settings.TryGetValue("MarketingPriceAdult", out var priceAdult);
+    settings.TryGetValue("MarketingPriceChild", out var priceChild);
+    settings.TryGetValue("MarketingPriceBaby", out var priceBaby);
+    settings.TryGetValue("MarketingPriceValidFrom", out var priceValidFrom);
+    settings.TryGetValue("MarketingPriceValidTo", out var priceValidTo);
     settings.TryGetValue("MarketingVideoUrl", out var videoUrl);
     settings.TryGetValue("MarketingGalleryJson", out var galleryJson);
     settings.TryGetValue("InstagramUrl", out var instagramUrl);
@@ -1964,6 +1979,67 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
         }
     }
 
+    static DateOnly TodayInTurkey()
+    {
+        try
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
+            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz));
+        }
+        catch
+        {
+            return DateOnly.FromDateTime(DateTime.UtcNow);
+        }
+    }
+
+    static bool TryParseDateOnlySetting(string? s, out DateOnly d)
+    {
+        d = default;
+        return !string.IsNullOrWhiteSpace(s) && DateOnly.TryParse(s!.Trim(), out d);
+    }
+
+    static bool IsMarketingPricingScheduleActive(DateOnly today, string? fromS, string? toS)
+    {
+        var hasFrom = TryParseDateOnlySetting(fromS, out var from);
+        var hasTo = TryParseDateOnlySetting(toS, out var to);
+        if (!hasFrom && !hasTo) return true;
+        if (hasFrom && today < from) return false;
+        if (hasTo && today > to) return false;
+        return true;
+    }
+
+    var adultTrim = priceAdult?.Trim();
+    var childTrim = priceChild?.Trim();
+    var babyTrim = priceBaby?.Trim();
+    var hasStructuredPricing = !string.IsNullOrWhiteSpace(adultTrim) || !string.IsNullOrWhiteSpace(childTrim) || !string.IsNullOrWhiteSpace(babyTrim);
+    string? legacyPriceForDto;
+    MarketingPricingDto? pricingForDto;
+    if (hasStructuredPricing)
+    {
+        if (!IsMarketingPricingScheduleActive(TodayInTurkey(), priceValidFrom, priceValidTo))
+        {
+            pricingForDto = null;
+            legacyPriceForDto = null;
+        }
+        else
+        {
+            var vf = string.IsNullOrWhiteSpace(priceValidFrom?.Trim()) ? null : priceValidFrom.Trim();
+            var vt = string.IsNullOrWhiteSpace(priceValidTo?.Trim()) ? null : priceValidTo.Trim();
+            pricingForDto = new MarketingPricingDto(
+                string.IsNullOrWhiteSpace(adultTrim) ? null : adultTrim,
+                string.IsNullOrWhiteSpace(childTrim) ? null : childTrim,
+                string.IsNullOrWhiteSpace(babyTrim) ? null : babyTrim,
+                vf,
+                vt);
+            legacyPriceForDto = null;
+        }
+    }
+    else
+    {
+        pricingForDto = null;
+        legacyPriceForDto = string.IsNullOrWhiteSpace(legacyPriceRaw) ? null : legacyPriceRaw.Trim();
+    }
+
     var dto = new MarketingLandingDto(
         tourTitle,
         startTime,
@@ -1973,7 +2049,8 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
         stops.Select(s => new LandingStopDto(s.Name, s.Description, ToAbsolute(s.ImageUrl))).ToList(),
         services,
         servicesEn,
-        price,
+        legacyPriceForDto,
+        pricingForDto,
         ToAbsolute(bannerUrl),
         gallery,
         videoUrl,

@@ -16,6 +16,14 @@ const I18N = {
     directions: 'Yol tarifi al',
     services: 'Hizmetler',
     price: 'Tur Fiyatı',
+    priceAdult: 'Yetişkin',
+    priceChild: 'Çocuk',
+    priceChildNote: '(6-12 yaş)',
+    priceBaby: 'Bebek',
+    priceBabyNote: '(0-3 ücretsiz)',
+    priceValidityFromTo: 'Bu fiyatlar {from} – {to} tarihleri arasında geçerlidir.',
+    priceValidityFrom: '{from} tarihinden itibaren geçerlidir.',
+    priceValidityTo: '{to} tarihine kadar geçerlidir.',
     stops: 'Duraklar',
     gallery: 'Tur Görselleri',
     video: 'Tur videosu',
@@ -42,6 +50,14 @@ const I18N = {
     directions: 'Get directions',
     services: 'Services',
     price: 'Tour Price',
+    priceAdult: 'Adult',
+    priceChild: 'Child',
+    priceChildNote: '(ages 6–12)',
+    priceBaby: 'Baby',
+    priceBabyNote: '(0–3 free)',
+    priceValidityFromTo: 'These rates are valid from {from} to {to}.',
+    priceValidityFrom: 'Valid from {from}.',
+    priceValidityTo: 'Valid through {to}.',
     stops: 'Stops',
     gallery: 'Tour Gallery',
     video: 'Tour video',
@@ -60,6 +76,28 @@ const I18N = {
     requestFailed: 'Your request could not be saved.',
   },
 } as const
+
+function formatMarketingPriceValidity(
+  validFrom: string | null | undefined,
+  validTo: string | null | undefined,
+  lang: Lang,
+): string | null {
+  const vf = validFrom?.trim()
+  const vt = validTo?.trim()
+  if (!vf && !vt) return null
+  const locale = lang === 'tr' ? 'tr-TR' : 'en-GB'
+  const fmt = (iso: string) => {
+    const d = new Date(`${iso.trim()}T12:00:00`)
+    return Number.isNaN(d.getTime()) ? iso.trim() : d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
+  }
+  const f = vf ? fmt(vf) : null
+  const t = vt ? fmt(vt) : null
+  const copy = I18N[lang]
+  if (f && t) return copy.priceValidityFromTo.replace('{from}', f).replace('{to}', t)
+  if (f) return copy.priceValidityFrom.replace('{from}', f)
+  if (t) return copy.priceValidityTo.replace('{to}', t)
+  return null
+}
 
 /** Admin alanına iframe HTML yapıştırılırsa src URL'sini çıkarır. */
 function extractEmbedSrc(input: string | null | undefined): string | null {
@@ -166,7 +204,6 @@ export function MarketingPage() {
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
-  // Fiyat metninden Yetişkin/Çocuk/Bebek fiyatlarını çıkar (örn: "Yetişkin 2000₺, Çocuk 1000₺, Bebek 0₺")
   const videoEmbedSrc = data.videoUrl ? toYoutubeEmbedUrl(data.videoUrl) : null
   const placeIdSource = `${data.locationMapUrl ?? ''} ${data.googleReviewsUrl ?? ''}`
   const placeIdMatch = /placeid=([A-Za-z0-9_-]+)/i.exec(placeIdSource)
@@ -194,15 +231,33 @@ export function MarketingPage() {
           ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(businessQuery)}&travelmode=driving`
           : null
 
+  const p = data.pricing
+  const structuredPriceRows = p
+    ? (
+        [
+          { label: t.priceAdult, note: null as string | null, value: p.adult },
+          { label: t.priceChild, note: t.priceChildNote, value: p.child },
+          { label: t.priceBaby, note: t.priceBabyNote, value: p.baby },
+        ] as const
+      )
+        .map((row) => ({ ...row, value: row.value?.trim() || '' }))
+        .filter((row) => row.value.length > 0)
+    : []
+
+  const priceValidityText =
+    structuredPriceRows.length > 0 && p ? formatMarketingPriceValidity(p.validFrom, p.validTo, lang) : null
+
   const priceItems: { label: string; price: string }[] = []
-  if (data.price) {
-    const re = /(Yetişkin|Çocuk|Bebek)\s*[:\s]*([^,]+)/gi
+  if (structuredPriceRows.length === 0 && data.price) {
+    const re = /(Yetişkin|Çocuk|Bebek|Adult|Child|Baby)\s*[:\s]*([^,]+)/gi
     let m: RegExpExecArray | null
     while ((m = re.exec(data.price)) !== null) {
       priceItems.push({ label: m[1], price: m[2].trim().replace(/\s+/g, ' ') })
     }
-    if (priceItems.length === 0) priceItems.push({ label: 'Fiyat', price: data.price })
+    if (priceItems.length === 0) priceItems.push({ label: lang === 'en' ? 'Price' : 'Fiyat', price: data.price })
   }
+
+  const showPriceSection = structuredPriceRows.length > 0 || !!data.price
 
   return (
     <div style={styles.page}>
@@ -290,10 +345,25 @@ export function MarketingPage() {
           </section>
         )}
 
-        {data.price && (
+        {showPriceSection && (
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>{t.price}</h2>
-            {priceItems.length > 1 ? (
+            {structuredPriceRows.length > 0 ? (
+              <>
+                {priceValidityText && (
+                  <p style={{ margin: '0 0 12px', fontSize: 14, color: '#475569', fontWeight: 500 }}>{priceValidityText}</p>
+                )}
+                <div style={styles.priceGrid}>
+                  {structuredPriceRows.map((item, i) => (
+                    <div key={i} style={styles.priceCard}>
+                      <span style={styles.priceLabel}>{item.label}</span>
+                      {item.note && <span style={styles.priceNote}>{item.note}</span>}
+                      <span style={styles.priceValue}>{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : priceItems.length > 1 ? (
               <div style={styles.priceGrid}>
                 {priceItems.map((item, i) => (
                   <div key={i} style={styles.priceCard}>
@@ -661,6 +731,13 @@ const styles: Record<string, CSSProperties> = {
     marginBottom: 6,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.04em',
+  },
+  priceNote: {
+    display: 'block',
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#334155',
+    marginBottom: 6,
   },
   priceValue: {
     display: 'block',

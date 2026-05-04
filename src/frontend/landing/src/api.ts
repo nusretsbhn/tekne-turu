@@ -69,6 +69,15 @@ export async function submitThanksSurvey(answers: string[]): Promise<void> {
 
 export type MarketingGalleryItem = { url: string; title?: string | null }
 
+/** Tanıtım sayfası yapılandırılmış fiyatlar (admin); geçerlilik API tarafında kontrol edilir. */
+export type MarketingPricing = {
+  adult: string | null
+  child: string | null
+  baby: string | null
+  validFrom: string | null
+  validTo: string | null
+}
+
 export type MarketingLandingData = {
   tourTitle: string
   startTime: string | null
@@ -78,7 +87,9 @@ export type MarketingLandingData = {
   stops: { name: string; description: string | null; imageUrl: string | null }[]
   services: string | null
   servicesEn?: string | null
+  /** Eski tek alan; yalnızca yapılandırılmış fiyat yoksa dolu gelir. */
   price: string | null
+  pricing?: MarketingPricing | null
   bannerUrl: string | null
   gallery: MarketingGalleryItem[]
   videoUrl: string | null

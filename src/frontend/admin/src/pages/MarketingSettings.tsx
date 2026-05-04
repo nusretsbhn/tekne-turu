@@ -6,7 +6,11 @@ const KEYS = [
   'MarketingBannerUrl',
   'MarketingServices',
   'MarketingServicesEn',
-  'MarketingPrice',
+  'MarketingPriceAdult',
+  'MarketingPriceChild',
+  'MarketingPriceBaby',
+  'MarketingPriceValidFrom',
+  'MarketingPriceValidTo',
   'MarketingVideoUrl',
   'MarketingGoogleReviewsUrl',
   'MarketingLocationMapUrl',
@@ -167,13 +171,55 @@ export function MarketingSettings() {
         </div>
 
         <div className="form-group">
-          <label>Tur Fiyatı</label>
-          <textarea
-            value={values.MarketingPrice ?? ''}
-            onChange={(e) => setValues((v) => ({ ...v, MarketingPrice: e.target.value }))}
-            rows={3}
-            placeholder="Örn: Yetişkin 40€, Çocuk 25€..."
-          />
+          <label>Tur fiyatları (tanıtım sayfası)</label>
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 0, marginBottom: 10 }}>
+            Yetişkin, çocuk ve bebek için ayrı fiyat girin. Geçerlilik aralığı boş bırakılırsa fiyatlar süresiz gösterilir; doluysa yalnızca bu tarihler (Türkiye saati) arasında
+            tanıtım sayfasında listelenir.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 13 }}>Yetişkin</label>
+              <input
+                value={values.MarketingPriceAdult ?? ''}
+                onChange={(e) => setValues((v) => ({ ...v, MarketingPriceAdult: e.target.value }))}
+                placeholder="Örn: 1250₺"
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 13 }}>Çocuk</label>
+              <input
+                value={values.MarketingPriceChild ?? ''}
+                onChange={(e) => setValues((v) => ({ ...v, MarketingPriceChild: e.target.value }))}
+                placeholder="Örn: 750₺"
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 13 }}>Bebek</label>
+              <input
+                value={values.MarketingPriceBaby ?? ''}
+                onChange={(e) => setValues((v) => ({ ...v, MarketingPriceBaby: e.target.value }))}
+                placeholder="Örn: 0₺"
+              />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginTop: 12 }}>
+            <div>
+              <label style={{ fontSize: 13 }}>Geçerlilik — başlangıç</label>
+              <input
+                type="date"
+                value={values.MarketingPriceValidFrom ?? ''}
+                onChange={(e) => setValues((v) => ({ ...v, MarketingPriceValidFrom: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 13 }}>Geçerlilik — bitiş</label>
+              <input
+                type="date"
+                value={values.MarketingPriceValidTo ?? ''}
+                onChange={(e) => setValues((v) => ({ ...v, MarketingPriceValidTo: e.target.value }))}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="form-group">

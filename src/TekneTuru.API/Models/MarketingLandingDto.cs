@@ -11,7 +11,9 @@ public record MarketingLandingDto(
     List<LandingStopDto> Stops,
     string? Services,
     string? ServicesEn,
+    /// <summary>Eski tek alan; yeni <see cref="Pricing"/> doluysa boş döner.</summary>
     string? Price,
+    MarketingPricingDto? Pricing,
     string? BannerUrl,
     List<MarketingGalleryItemDto> Gallery,
     string? VideoUrl,
