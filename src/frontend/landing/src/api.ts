@@ -87,6 +87,8 @@ export type MarketingLandingData = {
   stops: { name: string; description: string | null; imageUrl: string | null }[]
   services: string | null
   servicesEn?: string | null
+  servicesNote?: string | null
+  servicesNoteEn?: string | null
   /** Eski tek alan; yalnızca yapılandırılmış fiyat yoksa dolu gelir. */
   price: string | null
   pricing?: MarketingPricing | null
@@ -107,6 +109,8 @@ export type MarketingLandingData = {
   serviceLocationMapUrl?: string | null
   serviceLocationMapEmbedUrl?: string | null
   redbookUrl?: string | null
+  companyName?: string | null
+  companyIban?: string | null
 }
 
 export async function fetchMarketingLandingData(): Promise<MarketingLandingData> {

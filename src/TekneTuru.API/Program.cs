@@ -291,6 +291,10 @@ if (!string.IsNullOrEmpty(conn))
     }
     if (!await db.Settings.AnyAsync(s => s.Key == "MarketingServicesEn"))
         db.Settings.Add(new Setting { Key = "MarketingServicesEn", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingServicesNote"))
+        db.Settings.Add(new Setting { Key = "MarketingServicesNote", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingServicesNoteEn"))
+        db.Settings.Add(new Setting { Key = "MarketingServicesNoteEn", Value = "", UpdatedAt = DateTime.UtcNow });
     if (!await db.Settings.AnyAsync(s => s.Key == "MarketingPrice"))
     {
         db.Settings.Add(new Setting { Key = "MarketingPrice", Value = "", UpdatedAt = DateTime.UtcNow });
@@ -325,6 +329,10 @@ if (!string.IsNullOrEmpty(conn))
         db.Settings.Add(new Setting { Key = "MarketingServiceLocationMapEmbedUrl", Value = "", UpdatedAt = DateTime.UtcNow });
     if (!await db.Settings.AnyAsync(s => s.Key == "MarketingRedbookUrl"))
         db.Settings.Add(new Setting { Key = "MarketingRedbookUrl", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingCompanyName"))
+        db.Settings.Add(new Setting { Key = "MarketingCompanyName", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingCompanyIban"))
+        db.Settings.Add(new Setting { Key = "MarketingCompanyIban", Value = "", UpdatedAt = DateTime.UtcNow });
     if (!await db.Settings.AnyAsync(s => s.Key == "DeskRegistrationUrl"))
         db.Settings.Add(new Setting { Key = "DeskRegistrationUrl", Value = "https://vikingoludeniz.xyz/desk", UpdatedAt = DateTime.UtcNow });
     if (!await db.Settings.AnyAsync(s => s.Key == "DeskConsentText"))
@@ -1922,6 +1930,8 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
     settings.TryGetValue("MarketingBannerUrl", out var bannerUrl);
     settings.TryGetValue("MarketingServices", out var services);
     settings.TryGetValue("MarketingServicesEn", out var servicesEn);
+    settings.TryGetValue("MarketingServicesNote", out var servicesNote);
+    settings.TryGetValue("MarketingServicesNoteEn", out var servicesNoteEn);
     settings.TryGetValue("MarketingPrice", out var legacyPriceRaw);
     settings.TryGetValue("MarketingPriceAdult", out var priceAdult);
     settings.TryGetValue("MarketingPriceChild", out var priceChild);
@@ -1940,6 +1950,8 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
     settings.TryGetValue("MarketingServiceLocationMapUrl", out var marketingServiceLocationMapUrl);
     settings.TryGetValue("MarketingServiceLocationMapEmbedUrl", out var marketingServiceLocationMapEmbedUrl);
     settings.TryGetValue("MarketingRedbookUrl", out var marketingRedbookUrl);
+    settings.TryGetValue("MarketingCompanyName", out var marketingCompanyName);
+    settings.TryGetValue("MarketingCompanyIban", out var marketingCompanyIban);
 
     var googleReviewsForPage = string.IsNullOrWhiteSpace(marketingGoogleReviewsUrl) ? globalGoogleReviewsUrl : marketingGoogleReviewsUrl;
 
@@ -2049,6 +2061,8 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
         stops.Select(s => new LandingStopDto(s.Name, s.Description, ToAbsolute(s.ImageUrl))).ToList(),
         services,
         servicesEn,
+        servicesNote,
+        servicesNoteEn,
         legacyPriceForDto,
         pricingForDto,
         ToAbsolute(bannerUrl),
@@ -2066,7 +2080,9 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
         ToAbsolute(rulesPdfEn),
         marketingServiceLocationMapUrl,
         marketingServiceLocationMapEmbedUrl,
-        marketingRedbookUrl
+        marketingRedbookUrl,
+        string.IsNullOrWhiteSpace(marketingCompanyName) ? null : marketingCompanyName.Trim(),
+        string.IsNullOrWhiteSpace(marketingCompanyIban) ? null : marketingCompanyIban.Trim()
     );
     return Results.Ok(dto);
 }).AllowAnonymous();

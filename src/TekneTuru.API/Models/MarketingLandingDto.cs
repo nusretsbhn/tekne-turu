@@ -11,6 +11,8 @@ public record MarketingLandingDto(
     List<LandingStopDto> Stops,
     string? Services,
     string? ServicesEn,
+    string? ServicesNote,
+    string? ServicesNoteEn,
     /// <summary>Eski tek alan; yeni <see cref="Pricing"/> doluysa boş döner.</summary>
     string? Price,
     MarketingPricingDto? Pricing,
@@ -29,6 +31,8 @@ public record MarketingLandingDto(
     string? RulesPdfUrlEn,
     string? ServiceLocationMapUrl,
     string? ServiceLocationMapEmbedUrl,
-    string? RedbookUrl
+    string? RedbookUrl,
+    string? CompanyName,
+    string? CompanyIban
 );
 

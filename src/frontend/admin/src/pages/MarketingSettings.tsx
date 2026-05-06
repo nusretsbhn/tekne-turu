@@ -6,6 +6,8 @@ const KEYS = [
   'MarketingBannerUrl',
   'MarketingServices',
   'MarketingServicesEn',
+  'MarketingServicesNote',
+  'MarketingServicesNoteEn',
   'MarketingPriceAdult',
   'MarketingPriceChild',
   'MarketingPriceBaby',
@@ -18,6 +20,8 @@ const KEYS = [
   'MarketingServiceLocationMapUrl',
   'MarketingServiceLocationMapEmbedUrl',
   'MarketingRedbookUrl',
+  'MarketingCompanyName',
+  'MarketingCompanyIban',
 ] as const
 
 type GalleryItem = { url: string; title?: string | null }
@@ -158,6 +162,13 @@ export function MarketingSettings() {
             rows={4}
             placeholder="Tura dahil hizmetleri yazın..."
           />
+          <label style={{ marginTop: 10, display: 'block' }}>Hizmetler notu (Türkçe)</label>
+          <textarea
+            value={values.MarketingServicesNote ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, MarketingServicesNote: e.target.value }))}
+            rows={2}
+            placeholder="Örn: Fiyatlar kişi başıdır. Transfer ek ücrete tabidir."
+          />
         </div>
 
         <div className="form-group">
@@ -167,6 +178,13 @@ export function MarketingSettings() {
             onChange={(e) => setValues((v) => ({ ...v, MarketingServicesEn: e.target.value }))}
             rows={4}
             placeholder="English text for the Services section on the English landing page..."
+          />
+          <label style={{ marginTop: 10, display: 'block' }}>Hizmetler notu (İngilizce)</label>
+          <textarea
+            value={values.MarketingServicesNoteEn ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, MarketingServicesNoteEn: e.target.value }))}
+            rows={2}
+            placeholder="Example: Prices are per person. Transfer is subject to an extra fee."
           />
         </div>
 
@@ -217,6 +235,31 @@ export function MarketingSettings() {
                 type="date"
                 value={values.MarketingPriceValidTo ?? ''}
                 onChange={(e) => setValues((v) => ({ ...v, MarketingPriceValidTo: e.target.value }))}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Şirket hesap bilgileri</label>
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 0, marginBottom: 10 }}>
+            Bu alanlar `/landing/tanitim` sayfasında fiyat kutularının altında “Hesap bilgileri” başlığı ile görünür.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 13 }}>Firma adı</label>
+              <input
+                value={values.MarketingCompanyName ?? ''}
+                onChange={(e) => setValues((v) => ({ ...v, MarketingCompanyName: e.target.value }))}
+                placeholder="Örn: Viking Ölüdeniz Turizm"
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 13 }}>IBAN</label>
+              <input
+                value={values.MarketingCompanyIban ?? ''}
+                onChange={(e) => setValues((v) => ({ ...v, MarketingCompanyIban: e.target.value }))}
+                placeholder="TR00 0000 0000 0000 0000 0000 00"
               />
             </div>
           </div>

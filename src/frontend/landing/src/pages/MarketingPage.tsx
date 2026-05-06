@@ -24,6 +24,11 @@ const I18N = {
     priceValidityFromTo: 'Bu fiyatlar {from} – {to} tarihleri arasında geçerlidir.',
     priceValidityFrom: '{from} tarihinden itibaren geçerlidir.',
     priceValidityTo: '{to} tarihine kadar geçerlidir.',
+    accountInfoTitle: 'Hesap bilgileri',
+    companyName: 'Firma adı',
+    iban: 'IBAN',
+    copy: 'Kopyala',
+    copied: 'Kopyalandı',
     stops: 'Duraklar',
     gallery: 'Tur Görselleri',
     video: 'Tur videosu',
@@ -58,6 +63,11 @@ const I18N = {
     priceValidityFromTo: 'These rates are valid from {from} to {to}.',
     priceValidityFrom: 'Valid from {from}.',
     priceValidityTo: 'Valid through {to}.',
+    accountInfoTitle: 'Account details',
+    companyName: 'Company name',
+    iban: 'IBAN',
+    copy: 'Copy',
+    copied: 'Copied',
     stops: 'Stops',
     gallery: 'Tour Gallery',
     video: 'Tour video',
@@ -127,6 +137,7 @@ export function MarketingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<Screen>('idle')
   const [submitMessage, setSubmitMessage] = useState('')
+  const [copiedField, setCopiedField] = useState<'companyName' | 'iban' | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -192,6 +203,7 @@ export function MarketingPage() {
   const bannerUrl = resolveUrl(data.bannerUrl) || `${window.location.origin}/banner.jpg`
   const t = I18N[lang]
   const servicesText = lang === 'en' ? (data.servicesEn?.trim() || data.services) : data.services
+  const servicesNoteText = lang === 'en' ? (data.servicesNoteEn?.trim() || data.servicesNote?.trim()) : data.servicesNote?.trim()
   const barPdfUrl = lang === 'en' ? (resolveUrl(data.barMenuPdfUrlEn) || resolveUrl(data.barMenuPdfUrl)) : resolveUrl(data.barMenuPdfUrl)
   const rulesPdfUrl = lang === 'en' ? (resolveUrl(data.rulesPdfUrlEn) || resolveUrl(data.rulesPdfUrl)) : resolveUrl(data.rulesPdfUrl)
   const socialLinks = [
@@ -202,6 +214,16 @@ export function MarketingPage() {
 
   const openPdf = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  const copyText = async (key: 'companyName' | 'iban', value: string) => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopiedField(key)
+      window.setTimeout(() => setCopiedField((prev) => (prev === key ? null : prev)), 1400)
+    } catch {
+      setCopiedField(null)
+    }
   }
 
   const videoEmbedSrc = data.videoUrl ? toYoutubeEmbedUrl(data.videoUrl) : null
@@ -258,6 +280,9 @@ export function MarketingPage() {
   }
 
   const showPriceSection = structuredPriceRows.length > 0 || !!data.price
+  const companyName = data.companyName?.trim() ?? ''
+  const companyIban = data.companyIban?.trim() ?? ''
+  const showAccountInfo = companyName.length > 0 || companyIban.length > 0
 
   return (
     <div style={styles.page}>
@@ -341,6 +366,7 @@ export function MarketingPage() {
         {servicesText && (
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>{t.services}</h2>
+            {servicesNoteText && <p style={styles.servicesNote}>{servicesNoteText}</p>}
             <p style={styles.text}>{servicesText}</p>
           </section>
         )}
@@ -375,6 +401,33 @@ export function MarketingPage() {
             ) : (
               <div style={styles.priceCardSingle}>
                 <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#1a1a1a' }}>{data.price}</p>
+              </div>
+            )}
+            {showAccountInfo && (
+              <div style={styles.accountInfoWrap}>
+                <h3 style={styles.accountInfoTitle}>{t.accountInfoTitle}</h3>
+                {companyName && (
+                  <div style={styles.accountInfoRow}>
+                    <div>
+                      <div style={styles.accountInfoLabel}>{t.companyName}</div>
+                      <div style={styles.accountInfoValue}>{companyName}</div>
+                    </div>
+                    <button type="button" style={styles.accountCopyBtn} onClick={() => copyText('companyName', companyName)}>
+                      {copiedField === 'companyName' ? t.copied : t.copy}
+                    </button>
+                  </div>
+                )}
+                {companyIban && (
+                  <div style={styles.accountInfoRow}>
+                    <div>
+                      <div style={styles.accountInfoLabel}>{t.iban}</div>
+                      <div style={styles.accountInfoValue}>{companyIban}</div>
+                    </div>
+                    <button type="button" style={styles.accountCopyBtn} onClick={() => copyText('iban', companyIban)}>
+                      {copiedField === 'iban' ? t.copied : t.copy}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </section>
@@ -752,6 +805,52 @@ const styles: Record<string, CSSProperties> = {
     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
     border: '1px solid rgba(0,0,0,0.06)',
   },
+  accountInfoWrap: {
+    marginTop: 14,
+    background: '#fff',
+    borderRadius: 12,
+    padding: '14px 16px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+    border: '1px solid rgba(0,0,0,0.06)',
+  },
+  accountInfoTitle: {
+    margin: '0 0 10px',
+    fontSize: 16,
+    fontWeight: 700,
+    color: '#0f172a',
+  },
+  accountInfoRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    padding: '8px 0',
+    borderTop: '1px solid #f1f5f9',
+  },
+  accountInfoLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    marginBottom: 4,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.03em',
+  },
+  accountInfoValue: {
+    fontSize: 15,
+    fontWeight: 600,
+    color: '#111827',
+    wordBreak: 'break-word' as const,
+  },
+  accountCopyBtn: {
+    border: '1px solid #cbd5e1',
+    background: '#fff',
+    borderRadius: 8,
+    padding: '8px 12px',
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#0f172a',
+    cursor: 'pointer',
+    flexShrink: 0,
+  },
   docsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
@@ -821,6 +920,14 @@ const styles: Record<string, CSSProperties> = {
     margin: 0,
     fontSize: 15,
     color: '#444',
+    whiteSpace: 'pre-line',
+  },
+  servicesNote: {
+    margin: '0 0 8px',
+    fontSize: 14,
+    color: '#c1121f',
+    fontStyle: 'italic',
+    fontWeight: 600,
     whiteSpace: 'pre-line',
   },
   stopsGrid: {
