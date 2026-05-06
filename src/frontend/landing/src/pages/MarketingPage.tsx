@@ -366,13 +366,13 @@ export function MarketingPage() {
         {servicesText && (
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>{t.services}</h2>
-            {servicesNoteText && <p style={styles.servicesNote}>{servicesNoteText}</p>}
             <p style={styles.text}>{servicesText}</p>
           </section>
         )}
 
         {showPriceSection && (
           <section style={styles.section}>
+            {servicesNoteText && <p style={styles.servicesNote}>{servicesNoteText}</p>}
             <h2 style={styles.sectionTitle}>{t.price}</h2>
             {structuredPriceRows.length > 0 ? (
               <>
