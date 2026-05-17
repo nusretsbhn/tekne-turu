@@ -1,6 +1,7 @@
 import type { PersonForm } from '../types'
+import { calculateAgeCategory } from '../ageCategory'
 import { validatePerson } from '../validation'
-import type { AgeCategory, Nationality } from '../types'
+import type { Nationality } from '../types'
 
 const CONSENT_TEXT_URL = '/api/legal/consent'
 
@@ -31,6 +32,18 @@ function combineBirthDateParts(day: string, month: string, year: string): string
   return parts.join('|')
 }
 
+function applyBirthDateUpdate(
+  day: string,
+  month: string,
+  year: string,
+  tourDate: string,
+  onChange: (updates: Partial<PersonForm>) => void,
+) {
+  const birthDate = combineBirthDateParts(day, month, year)
+  const ageCategory = calculateAgeCategory(birthDate, tourDate)
+  onChange(ageCategory ? { birthDate, ageCategory } : { birthDate })
+}
+
 const styles = {
   card: { marginBottom: 12, border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' as const },
   header: { padding: '12px 16px', background: '#f5f5f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' },
@@ -59,7 +72,8 @@ interface PersonCardProps {
 }
 
 export function PersonCard({ person, index, canRemove, expanded, onToggle, onChange, onRemove, tourDate, onTourDateChange }: PersonCardProps) {
-  const err = validatePerson(person)
+  const err = validatePerson(person, tourDate)
+  const ageCategory = calculateAgeCategory(person.birthDate, tourDate) ?? person.ageCategory
   const isForeign = person.nationality === 'Diğer'
   const label = person.fullName?.trim() ? `Kişi ${index + 1} – ${person.fullName.trim()}${err ? '' : ' ✓'}` : `Kişi ${index + 1}`
 
@@ -134,7 +148,7 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
                         placeholder="Gün"
                         style={{ ...styles.input, width: 64 }}
                         value={parts.day}
-                        onChange={(e) => onChange({ birthDate: combineBirthDateParts(e.target.value.replace(/\D/g, ''), parts.month, parts.year) })}
+                        onChange={(e) => applyBirthDateUpdate(e.target.value.replace(/\D/g, ''), parts.month, parts.year, tourDate, onChange)}
                         required
                         aria-label="Doğum günü"
                       />
@@ -145,7 +159,7 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
                         placeholder="Ay"
                         style={{ ...styles.input, width: 64 }}
                         value={parts.month}
-                        onChange={(e) => onChange({ birthDate: combineBirthDateParts(parts.day, e.target.value.replace(/\D/g, ''), parts.year) })}
+                        onChange={(e) => applyBirthDateUpdate(parts.day, e.target.value.replace(/\D/g, ''), parts.year, tourDate, onChange)}
                         required
                         aria-label="Doğum ayı"
                       />
@@ -156,7 +170,7 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
                         placeholder="Yıl"
                         style={{ ...styles.input, width: 80 }}
                         value={parts.year}
-                        onChange={(e) => onChange({ birthDate: combineBirthDateParts(parts.day, parts.month, e.target.value.replace(/\D/g, '')) })}
+                        onChange={(e) => applyBirthDateUpdate(parts.day, parts.month, e.target.value.replace(/\D/g, ''), tourDate, onChange)}
                         required
                         aria-label="Doğum yılı"
                       />
@@ -167,11 +181,18 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
             </div>
             <div>
               <label style={styles.label}>Yaş Kategorisi <span style={styles.labelEn}>/ Age Category</span> <span style={styles.required}>*</span></label>
-              <select style={styles.input} value={person.ageCategory} onChange={(e) => onChange({ ageCategory: e.target.value as AgeCategory })}>
-                <option value="Yetişkin">Yetişkin</option>
-                <option value="Çocuk">Çocuk (2-12)</option>
+              <select
+                style={{ ...styles.input, background: '#f3f4f6', cursor: 'not-allowed' }}
+                value={ageCategory || ''}
+                disabled
+                aria-readonly
+              >
+                {!ageCategory && <option value="">Doğum tarihi giriniz</option>}
+                <option value="Yetişkin">Yetişkin (13+)</option>
+                <option value="Çocuk">Çocuk (3-12)</option>
                 <option value="Bebek">Bebek (0-2)</option>
               </select>
+              <span style={{ fontSize: 12, color: '#666', display: 'block', marginTop: 4 }}>Tur tarihine göre otomatik hesaplanır.</span>
             </div>
           </div>
           <div style={styles.full}>

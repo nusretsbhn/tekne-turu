@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { emptyPerson, type PersonForm } from './types'
 import { allPersonsValid } from './validation'
 import { createBooking } from './api'
+import { calculateAgeCategory } from './ageCategory'
 import { PersonCard } from './components/PersonCard'
 
 type Screen = 'start' | 'form' | 'thankyou'
@@ -48,6 +49,16 @@ export default function App() {
     setPersons((p) => p.map((x) => (x.id === id ? { ...x, ...updates } : x)))
   }, [])
 
+  const handleTourDateChange = useCallback((newDate: string) => {
+    setTourDate(newDate)
+    setPersons((prev) =>
+      prev.map((p) => {
+        const cat = calculateAgeCategory(p.birthDate, newDate)
+        return cat ? { ...p, ageCategory: cat } : p
+      }),
+    )
+  }, [])
+
   const removePerson = useCallback((id: string) => {
     setPersons((p) => p.filter((x) => x.id !== id))
     if (expandedId === id) setExpandedId(null)
@@ -67,7 +78,7 @@ export default function App() {
   }, [screen, countdown])
 
   const submit = useCallback(async () => {
-    if (!allPersonsValid(persons) || !tourDate) return
+    if (!allPersonsValid(persons, tourDate) || !tourDate) return
     const count = persons.length
     const dateTr = new Date(tourDate).toLocaleDateString('tr-TR')
     const dateEn = new Date(tourDate).toLocaleDateString('en-GB')
@@ -109,7 +120,7 @@ export default function App() {
     )
   }
 
-  const valid = allPersonsValid(persons)
+  const valid = allPersonsValid(persons, tourDate)
 
   return (
     <div style={styles.wrap}>
@@ -127,7 +138,7 @@ export default function App() {
           onChange={(updates) => updatePerson(p.id, updates)}
           onRemove={() => removePerson(p.id)}
           tourDate={tourDate}
-          onTourDateChange={setTourDate}
+          onTourDateChange={handleTourDateChange}
         />
       ))}
       <div style={{ ...styles.formHeader, marginTop: 16 }}>
