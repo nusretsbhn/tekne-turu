@@ -1801,6 +1801,63 @@ app.MapGet("/api/landing/thanks-settings", async (AppDbContext db, CancellationT
     return Results.Ok(new { instagramUrl, googleReviewsUrl, tripAdvisorUrl, thanksPageDescription, thanksSurveyJson });
 }).AllowAnonymous();
 
+app.MapGet("/api/landing/bilgi", async (AppDbContext db, HttpContext httpContext, CancellationToken ct) =>
+{
+    var tour = await db.TourInfos.AsNoTracking().FirstOrDefaultAsync(ct);
+    var settings = await db.Settings.AsNoTracking().ToDictionaryAsync(s => s.Key, s => s.Value, ct);
+    var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+    string? ToAbsolute(string? url) => string.IsNullOrEmpty(url) ? url : url.StartsWith("/", StringComparison.Ordinal) ? baseUrl + url : url;
+
+    settings.TryGetValue("MarketingBannerUrl", out var marketingBannerUrl);
+    settings.TryGetValue("MarketingGoogleReviewsUrl", out var marketingGoogleReviewsUrl);
+    settings.TryGetValue("GoogleReviewsUrl", out var globalGoogleReviewsUrl);
+
+    var menuPdfTr = await db.Documents.AsNoTracking()
+        .Where(d => d.DocType == "menu" && d.Language == "TR")
+        .Select(d => d.FileUrl)
+        .FirstOrDefaultAsync(ct);
+    var menuPdfEn = await db.Documents.AsNoTracking()
+        .Where(d => d.DocType == "menu" && d.Language == "EN")
+        .Select(d => d.FileUrl)
+        .FirstOrDefaultAsync(ct);
+
+    var tourImage = ToAbsolute(tour?.ImageUrl);
+    if (string.IsNullOrWhiteSpace(tourImage))
+        tourImage = ToAbsolute(marketingBannerUrl);
+
+    var googleReviewsUrl = string.IsNullOrWhiteSpace(marketingGoogleReviewsUrl) ? globalGoogleReviewsUrl : marketingGoogleReviewsUrl;
+
+    var dto = new BilgiLandingDto(
+        tour?.Title ?? "Günlük Tekne Turu",
+        tourImage,
+        ToAbsolute(menuPdfTr),
+        ToAbsolute(menuPdfEn),
+        googleReviewsUrl
+    );
+    return Results.Ok(dto);
+}).AllowAnonymous();
+
+app.MapPost("/api/landing/bilgi/feedback", async (SubmitBilgiFeedbackRequest body, AppDbContext db, CancellationToken ct) =>
+{
+    var typeNorm = (body.Type ?? "").Trim();
+    if (typeNorm != "Dilek" && typeNorm != "İstek" && typeNorm != "Şikayet" && typeNorm != "Istek" && typeNorm != "Sikayet")
+        return Results.BadRequest(new { error = "Tür seçiniz: Dilek, İstek veya Şikayet." });
+    if (typeNorm == "Istek") typeNorm = "İstek";
+    if (typeNorm == "Sikayet") typeNorm = "Şikayet";
+    var message = (body.Message ?? "").Trim();
+    if (string.IsNullOrEmpty(message))
+        return Results.BadRequest(new { error = "Mesaj giriniz." });
+    db.Feedbacks.Add(new Feedback
+    {
+        Type = typeNorm,
+        Message = message,
+        Status = "Yeni",
+        CreatedAt = DateTime.UtcNow
+    });
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new { success = true });
+}).AllowAnonymous();
+
 app.MapGet("/api/legal/consent", async (AppDbContext db, CancellationToken ct) =>
 {
     var text = (await db.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == "DeskConsentText", ct))?.Value?.Trim();

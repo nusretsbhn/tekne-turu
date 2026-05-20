@@ -3,6 +3,7 @@ import { TokenLandingPage } from './pages/TokenLandingPage'
 import { ThanksPage } from './pages/ThanksPage'
 import { MarketingPage } from './pages/MarketingPage'
 import { ChinaGuestPage } from './pages/ChinaGuestPage'
+import { BilgiPage } from './pages/BilgiPage'
 
 export default function App() {
   return (
@@ -10,6 +11,7 @@ export default function App() {
       <Route path="/thanks" element={<ThanksPage />} />
       <Route path="/tanitim/cn" element={<ChinaGuestPage />} />
       <Route path="/tanitim" element={<MarketingPage />} />
+      <Route path="/bilgi" element={<BilgiPage />} />
       <Route path="/" element={<TokenLandingPage />} />
       <Route
         path="*"

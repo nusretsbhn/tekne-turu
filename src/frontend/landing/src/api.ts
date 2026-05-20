@@ -43,6 +43,32 @@ export async function fetchThanksSettings(): Promise<ThanksSettings> {
   return res.json()
 }
 
+export type BilgiLandingData = {
+  tourTitle: string
+  tourImageUrl: string | null
+  barMenuPdfUrlTr: string | null
+  barMenuPdfUrlEn: string | null
+  googleReviewsUrl: string | null
+}
+
+export async function fetchBilgiLandingData(): Promise<BilgiLandingData> {
+  const res = await fetch('/api/landing/bilgi')
+  if (!res.ok) throw new Error('Sayfa yüklenemedi.')
+  return res.json()
+}
+
+export async function submitBilgiFeedback(type: string, message: string): Promise<void> {
+  const res = await fetch('/api/landing/bilgi/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type, message }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(data?.error ?? 'Gönderilemedi.')
+  }
+}
+
 export async function submitFeedback(token: string, type: string, message: string): Promise<void> {
   const res = await fetch('/api/landing/feedback', {
     method: 'POST',
