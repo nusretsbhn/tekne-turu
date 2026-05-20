@@ -1806,7 +1806,14 @@ app.MapGet("/api/landing/bilgi", async (AppDbContext db, HttpContext httpContext
     var tour = await db.TourInfos.AsNoTracking().FirstOrDefaultAsync(ct);
     var settings = await db.Settings.AsNoTracking().ToDictionaryAsync(s => s.Key, s => s.Value, ct);
     var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
-    string? ToAbsolute(string? url) => string.IsNullOrEmpty(url) ? url : url.StartsWith("/", StringComparison.Ordinal) ? baseUrl + url : url;
+    string? ToAbsolute(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return url;
+        var t = url.Trim();
+        if (t.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || t.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return t;
+        return t.StartsWith("/", StringComparison.Ordinal) ? baseUrl + t : $"{baseUrl}/{t}";
+    }
 
     settings.TryGetValue("MarketingBannerUrl", out var marketingBannerUrl);
     settings.TryGetValue("MarketingGoogleReviewsUrl", out var marketingGoogleReviewsUrl);

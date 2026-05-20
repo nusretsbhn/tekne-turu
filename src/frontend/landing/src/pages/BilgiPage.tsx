@@ -111,10 +111,7 @@ export function BilgiPage() {
   const menuPdfTr = resolveAssetUrl(data?.barMenuPdfUrlTr)
   const menuPdfEn = resolveAssetUrl(data?.barMenuPdfUrlEn)
   const menuPdfActive = menuPopup === 'tr' ? menuPdfTr : menuPopup === 'en' ? menuPdfEn : ''
-
-  const heroStyle = data?.tourImageUrl
-    ? { ...styles.hero, backgroundImage: `url(${resolveAssetUrl(data.tourImageUrl)})` }
-    : styles.hero
+  const heroImageSrc = resolveAssetUrl(data?.tourImageUrl)
 
   if (loading) {
     return (
@@ -144,7 +141,10 @@ export function BilgiPage() {
           </div>
         </header>
 
-        <section style={heroStyle}>
+        <section style={styles.hero}>
+          {heroImageSrc ? (
+            <img src={heroImageSrc} alt="" style={styles.heroBgImg} aria-hidden />
+          ) : null}
           <div style={styles.heroOverlay} aria-hidden />
           <div style={styles.heroContent}>
             <h1 style={styles.heroTitle}>{data.tourTitle}</h1>
@@ -153,22 +153,22 @@ export function BilgiPage() {
 
         <section style={styles.section}>
           <h2 style={styles.sectionTitle}>{t ? 'Bar menüsü' : 'Bar menu'}</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {menuPdfTr ? (
-              <button type="button" onClick={() => setMenuPopup('tr')} style={styles.linkBtn}>
-                {t ? 'Menüyü görüntüle (Türkçe)' : 'View menu (Turkish)'}
-              </button>
-            ) : (
-              <p style={styles.muted}>{t ? 'Türkçe menü yüklenmedi.' : 'Turkish menu not available.'}</p>
-            )}
-            {menuPdfEn ? (
-              <button type="button" onClick={() => setMenuPopup('en')} style={styles.linkBtnSecondary}>
-                {t ? 'Menüyü görüntüle (İngilizce)' : 'View menu (English)'}
-              </button>
-            ) : (
-              <p style={styles.muted}>{t ? 'İngilizce menü yüklenmedi.' : 'English menu not available.'}</p>
-            )}
-          </div>
+          {menuPdfTr || menuPdfEn ? (
+            <div style={styles.menuBtnRow}>
+              {menuPdfTr ? (
+                <button type="button" onClick={() => setMenuPopup('tr')} style={{ ...styles.linkBtn, ...styles.menuBtnItem }}>
+                  {t ? 'Menüyü görüntüle (Türkçe)' : 'View menu (Turkish)'}
+                </button>
+              ) : null}
+              {menuPdfEn ? (
+                <button type="button" onClick={() => setMenuPopup('en')} style={{ ...styles.linkBtnSecondary, ...styles.menuBtnItem }}>
+                  {t ? 'Menüyü görüntüle (İngilizce)' : 'View menu (English)'}
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <p style={styles.muted}>{t ? 'Menü yüklenmedi.' : 'Menu not available.'}</p>
+          )}
         </section>
 
         {data.googleReviewsUrl && (
@@ -284,22 +284,30 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '56px 24px',
     textAlign: 'center',
     color: '#fff',
-    backgroundImage: 'url(/banner.jpg)',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
     backgroundColor: '#1a1a2e',
     minHeight: 220,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  heroBgImg: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    objectPosition: 'center',
+    zIndex: 0,
   },
   heroOverlay: {
     position: 'absolute',
     inset: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.35)',
     pointerEvents: 'none',
+    zIndex: 1,
   },
-  heroContent: { position: 'relative', zIndex: 1, width: '100%' },
+  heroContent: { position: 'relative', zIndex: 2, width: '100%' },
   heroTitle: {
     margin: 0,
     fontSize: 28,
@@ -308,6 +316,22 @@ const styles: Record<string, React.CSSProperties> = {
   },
   section: { padding: '32px 24px', maxWidth: 800, margin: '0 auto' },
   sectionTitle: { margin: '0 0 16px', fontSize: 20, color: '#1a1a1a' },
+  menuBtnRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    gap: 10,
+    width: '100%',
+    alignItems: 'stretch',
+  },
+  menuBtnItem: {
+    flex: '1 1 0',
+    minWidth: 0,
+    textAlign: 'center',
+    fontSize: 14,
+    lineHeight: 1.3,
+    padding: '12px 10px',
+  },
   card: { background: '#fff', padding: 20, borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,.08)' },
   linkBtn: { display: 'inline-block', padding: '10px 20px', background: '#1a1a1a', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 500, border: 'none', cursor: 'pointer' },
   linkBtnSecondary: {
