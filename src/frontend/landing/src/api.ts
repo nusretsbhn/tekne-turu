@@ -45,7 +45,7 @@ export async function fetchThanksSettings(): Promise<ThanksSettings> {
 
 export type BilgiLandingData = {
   tourTitle: string
-  tourImageUrl: string | null
+  bannerUrl: string | null
   barMenuPdfUrlTr: string | null
   barMenuPdfUrlEn: string | null
   googleReviewsUrl: string | null

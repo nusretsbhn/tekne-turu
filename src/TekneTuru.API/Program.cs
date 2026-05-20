@@ -1828,15 +1828,15 @@ app.MapGet("/api/landing/bilgi", async (AppDbContext db, HttpContext httpContext
         .Select(d => d.FileUrl)
         .FirstOrDefaultAsync(ct);
 
-    var tourImage = ToAbsolute(tour?.ImageUrl);
-    if (string.IsNullOrWhiteSpace(tourImage))
-        tourImage = ToAbsolute(marketingBannerUrl);
+    var bannerImage = ToAbsolute(marketingBannerUrl);
+    if (string.IsNullOrWhiteSpace(bannerImage))
+        bannerImage = ToAbsolute(tour?.ImageUrl);
 
     var googleReviewsUrl = string.IsNullOrWhiteSpace(marketingGoogleReviewsUrl) ? globalGoogleReviewsUrl : marketingGoogleReviewsUrl;
 
     var dto = new BilgiLandingDto(
         tour?.Title ?? "Günlük Tekne Turu",
-        tourImage,
+        bannerImage,
         ToAbsolute(menuPdfTr),
         ToAbsolute(menuPdfEn),
         googleReviewsUrl

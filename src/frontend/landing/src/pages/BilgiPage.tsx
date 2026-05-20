@@ -111,7 +111,7 @@ export function BilgiPage() {
   const menuPdfTr = resolveAssetUrl(data?.barMenuPdfUrlTr)
   const menuPdfEn = resolveAssetUrl(data?.barMenuPdfUrlEn)
   const menuPdfActive = menuPopup === 'tr' ? menuPdfTr : menuPopup === 'en' ? menuPdfEn : ''
-  const heroImageSrc = resolveAssetUrl(data?.tourImageUrl)
+  const heroImageSrc = resolveAssetUrl(data?.bannerUrl)
 
   if (loading) {
     return (
