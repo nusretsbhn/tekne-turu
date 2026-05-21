@@ -14,11 +14,13 @@ public class TicketService
 {
     private readonly AppDbContext _db;
     private readonly IWebHostEnvironment _env;
+    private readonly IConfiguration _config;
 
-    public TicketService(AppDbContext db, IWebHostEnvironment env)
+    public TicketService(AppDbContext db, IWebHostEnvironment env, IConfiguration config)
     {
         _db = db;
         _env = env;
+        _config = config;
     }
 
     /// <summary>Sonraki 6 haneli bilet numarasını üretir (000001, 000002, ...).</summary>
@@ -42,13 +44,7 @@ public class TicketService
         return path;
     }
 
-    /// <summary>Kesilen bilet JPG'lerinin saklandığı klasör.</summary>
-    private string GetTicketsDirectory()
-    {
-        var dir = Path.Combine(_env.ContentRootPath, "wwwroot", "tickets");
-        Directory.CreateDirectory(dir);
-        return dir;
-    }
+    private string GetTicketsDirectory() => StoragePaths.GetTicketsDirectory(_env, _config);
 
     private string GetLayoutPath() => Path.Combine(_env.ContentRootPath, "Templates", "ticket-layout.json");
 
@@ -89,7 +85,7 @@ public class TicketService
         return 2.8;
     }
 
-    /// <summary>Bilet bilgilerini şablon üzerine yazar ve JPG olarak kaydeder. Dosya yolu döner.</summary>
+    /// <summary>Bilet bilgilerini şablon üzerine yazar ve JPG olarak kaydeder. Web yolu döner (/uploads/tickets/...).</summary>
     public async Task<string> GenerateTicketImageAsync(Ticket ticket, CancellationToken ct = default)
     {
         var templatePath = GetTemplatePath();
@@ -157,7 +153,6 @@ public class TicketService
         }
         else
         {
-            // Konfig yoksa: tek sütun, çakışma olmayacak şekilde
             DrawAt(ticket.TicketNumber, 40, 14);
             DrawAt(ticket.FullName, 8, 24);
             DrawAt(ticket.Phone, 8, 30);
@@ -178,6 +173,33 @@ public class TicketService
         var ticketsDir = GetTicketsDirectory();
         var fullPath = Path.Combine(ticketsDir, fileName);
         await image.SaveAsJpegAsync(fullPath, ct);
-        return $"/tickets/{fileName}";
+        return $"/uploads/tickets/{fileName}";
+    }
+
+    /// <summary>İndirme için dosya yolu; diskte yoksa bilet kaydından yeniden üretir.</summary>
+    public async Task<(string PhysicalPath, string FileName)?> TryGetTicketFileAsync(int ticketId, bool regenerateIfMissing, CancellationToken ct = default)
+    {
+        var ticket = await _db.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId, ct);
+        if (ticket == null) return null;
+
+        var physical = StoragePaths.ResolvePhysicalPath(ticket.FilePath, _env, _config);
+        if (!string.IsNullOrEmpty(physical) && File.Exists(physical))
+            return (physical, Path.GetFileName(physical));
+
+        if (!regenerateIfMissing) return null;
+
+        try
+        {
+            ticket.FilePath = await GenerateTicketImageAsync(ticket, ct);
+            ticket.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+            physical = StoragePaths.ResolvePhysicalPath(ticket.FilePath, _env, _config);
+            if (string.IsNullOrEmpty(physical) || !File.Exists(physical)) return null;
+            return (physical, Path.GetFileName(physical));
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

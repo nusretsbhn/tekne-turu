@@ -78,7 +78,10 @@ export function Biletler() {
     if (!token) return
     try {
       const res = await fetch(ticketFileUrl(id), { headers: headers(token) })
-      if (!res.ok) throw new Error('Dosya alınamadı')
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string }
+        throw new Error(err?.error ?? (res.status === 404 ? 'Bilet dosyası bulunamadı (sunucuda silinmiş olabilir).' : 'Dosya alınamadı'))
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -95,7 +98,10 @@ export function Biletler() {
     if (!token) return
     try {
       const res = await fetch(ticketFileUrl(id), { headers: headers(token) })
-      if (!res.ok) throw new Error('Dosya alınamadı')
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string }
+        throw new Error(err?.error ?? (res.status === 404 ? 'Bilet dosyası bulunamadı (sunucuda silinmiş olabilir).' : 'Dosya alınamadı'))
+      }
       const blob = await res.blob()
       const file = new File([blob], `bilet-${id}.jpg`, { type: 'image/jpeg' })
       if (navigator.canShare && navigator.canShare({ files: [file] })) {

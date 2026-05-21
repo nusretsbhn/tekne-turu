@@ -456,15 +456,9 @@ app.UseCors();
 
 // wwwroot ve uploads klasörünü static dosya olarak sun
 app.UseStaticFiles();
-var uploadsPathSetting = builder.Configuration["Storage:UploadsPath"];
-var uploadsPathEnv = Environment.GetEnvironmentVariable("UPLOADS_PATH");
-var uploadsRootRaw = !string.IsNullOrWhiteSpace(uploadsPathSetting) ? uploadsPathSetting : uploadsPathEnv;
-var uploadsRoot = string.IsNullOrWhiteSpace(uploadsRootRaw)
-    ? Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads")
-    : (Path.IsPathRooted(uploadsRootRaw)
-        ? uploadsRootRaw
-        : Path.Combine(app.Environment.ContentRootPath, uploadsRootRaw));
+var uploadsRoot = StoragePaths.GetUploadsRoot(app.Environment, app.Configuration);
 Directory.CreateDirectory(uploadsRoot);
+Directory.CreateDirectory(StoragePaths.GetTicketsDirectory(app.Environment, app.Configuration));
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(uploadsRoot),
@@ -1414,25 +1408,19 @@ adminGroup.MapPut("/tickets/{id:int}", async (int id, HttpRequest request, AppDb
 
     return Results.Ok(new { id = ticket.Id, filePath = ticket.FilePath });
 });
-adminGroup.MapGet("/tickets/{id:int}/file", async (int id, AppDbContext db, IWebHostEnvironment env, CancellationToken ct) =>
+adminGroup.MapGet("/tickets/{id:int}/file", async (int id, TicketService ticketService, CancellationToken ct) =>
 {
-    var filePath = await db.Tickets.AsNoTracking().Where(t => t.Id == id).Select(t => t.FilePath).FirstOrDefaultAsync(ct);
-    if (string.IsNullOrEmpty(filePath)) return Results.NotFound();
-    var path = Path.Combine(env.ContentRootPath, "wwwroot", filePath.TrimStart('/'));
-    if (!System.IO.File.Exists(path)) return Results.NotFound();
-    var fileName = Path.GetFileName(path);
-    return TypedResults.PhysicalFile(path, "image/jpeg", fileName);
+    var file = await ticketService.TryGetTicketFileAsync(id, regenerateIfMissing: true, ct);
+    if (file == null) return Results.NotFound(new { error = "Bilet görseli bulunamadı veya oluşturulamadı." });
+    return TypedResults.PhysicalFile(file.Value.PhysicalPath, "image/jpeg", file.Value.FileName);
 });
 
 // Public ticket image endpoint for SMS links (no auth).
-app.MapGet("/api/tickets/{id:int}/file", async (int id, AppDbContext db, IWebHostEnvironment env, CancellationToken ct) =>
+app.MapGet("/api/tickets/{id:int}/file", async (int id, TicketService ticketService, CancellationToken ct) =>
 {
-    var filePath = await db.Tickets.AsNoTracking().Where(t => t.Id == id).Select(t => t.FilePath).FirstOrDefaultAsync(ct);
-    if (string.IsNullOrEmpty(filePath)) return Results.NotFound();
-    var path = Path.Combine(env.ContentRootPath, "wwwroot", filePath.TrimStart('/'));
-    if (!System.IO.File.Exists(path)) return Results.NotFound();
-    var fileName = Path.GetFileName(path);
-    return TypedResults.PhysicalFile(path, "image/jpeg", fileName);
+    var file = await ticketService.TryGetTicketFileAsync(id, regenerateIfMissing: true, ct);
+    if (file == null) return Results.NotFound();
+    return TypedResults.PhysicalFile(file.Value.PhysicalPath, "image/jpeg", file.Value.FileName);
 });
 
 // --- Acentalar ---

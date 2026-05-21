@@ -31,6 +31,8 @@
 
 Her path için ayrı “Alan Adı” ekle; hedef servis: `tekneturu-api`, port: 5244.
 
+**Kalıcı dosyalar (önemli):** Pazarlama görselleri ve bilet JPG’leri `UPLOADS_PATH` (veya `Storage:UploadsPath`) altında saklanır. API container’ında bu yolu **volume** ile bağlayın (ör. `/data/uploads`). Biletler `uploads/tickets/` altına yazılır; deploy sonrası da indirilebilir kalır.
+
 ## 3. Path Sırası (önemli)
 
 Easypanel’de path kuralları **daha spesifik olan önce** çalışmalı:
