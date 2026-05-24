@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { fetchSmsTemplates, updateSmsTemplate, fetchCustomers, sendBulkSms, type SmsTemplateItem, type CustomerListItem } from '../api'
+import { isTurkishMobileForSms } from '../utils/smsPhone'
 
 const SMS_TEMPLATE_TITLES: Record<string, string> = {
   'booking-confirmation': 'Rezervasyon onayı',
@@ -68,7 +69,7 @@ export function Sms() {
     })
   }
   const selectAll = () => {
-    const canReceive = customers.filter((c) => (c.nationality?.toUpperCase() === 'TR' && c.phone?.trim())).map((c) => c.id)
+    const canReceive = customers.filter((c) => isTurkishMobileForSms(c.phone)).map((c) => c.id)
     setSelectedIds((prev) => (prev.size === canReceive.length ? new Set() : new Set(canReceive)))
   }
   const sendBulk = async () => {
@@ -79,11 +80,11 @@ export function Sms() {
     setSendLoading(true)
     setMessage('')
     sendBulkSms(token, Array.from(selectedIds), bulkMessage.trim())
-      .then((r) => setMessage(`${r.sent} kişiye gönderildi, ${r.skipped} atlandı (TR uyruklu ve telefonu olanlara gider).`))
+      .then((r) => setMessage(`${r.sent} kişiye gönderildi, ${r.skipped} atlandı (+90 cep numarası olanlara gider).`))
       .catch((e) => setMessage(e instanceof Error ? e.message : 'Gönderilemedi.'))
       .finally(() => setSendLoading(false))
   }
-  const canReceive = (c: CustomerListItem) => (c.nationality?.trim().toUpperCase() === 'TR' && !!c.phone?.trim())
+  const canReceive = (c: CustomerListItem) => isTurkishMobileForSms(c.phone)
 
   return (
     <div>
@@ -142,7 +143,7 @@ export function Sms() {
 
       {tab === 'send' && (
         <>
-          <p style={{ marginBottom: 12, color: 'var(--color-text-muted)', fontSize: 14 }}>Sadece uyruğu Türkiye (TR) ve telefonu kayıtlı müşterilere SMS gider.</p>
+          <p style={{ marginBottom: 12, color: 'var(--color-text-muted)', fontSize: 14 }}>Sadece +90 ile başlayan (Türkiye cep) telefon numarası kayıtlı müşterilere SMS gider.</p>
           <div className="toolbar">
             <input type="date" value={filters.dateFrom} onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))} aria-label="Başlangıç" />
             <input type="date" value={filters.dateTo} onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))} aria-label="Bitiş" />
@@ -152,7 +153,7 @@ export function Sms() {
           {customers.length > 0 && (
             <>
               <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <button type="button" onClick={selectAll} className="btn btn-secondary btn-sm">TR ve telefonu olanları tümünü seç / kaldır</button>
+                <button type="button" onClick={selectAll} className="btn btn-secondary btn-sm">+90 numaralıları tümünü seç / kaldır</button>
                 <span style={{ color: 'var(--color-text-muted)', fontSize: 13 }}>{selectedIds.size} seçili</span>
               </div>
               <div className="form-group">
@@ -175,7 +176,7 @@ export function Sms() {
                     {customers.map((c) => (
                       <tr key={c.id}>
                         <td>
-                          <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)} disabled={!canReceive(c)} title={!canReceive(c) ? 'Sadece TR uyruklu ve telefonu olanlar seçilebilir' : ''} />
+                          <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)} disabled={!canReceive(c)} title={!canReceive(c) ? 'Sadece +90 cep numarası olanlar seçilebilir' : ''} />
                         </td>
                         <td>{c.fullName}</td>
                         <td>{c.phone ?? '—'}</td>

@@ -151,8 +151,7 @@ public class BookingService
 
         foreach (var b in newBookings)
         {
-            var isTr = string.Equals(b.Customer.Nationality?.Trim(), "TR", StringComparison.OrdinalIgnoreCase);
-            if (isTr && b.Customer.SmsConsent && !string.IsNullOrWhiteSpace(b.Customer.Phone))
+            if (b.Customer.SmsConsent && SmsPhoneHelper.IsTurkishMobileForSms(b.Customer.Phone))
             {
                 try
                 {
@@ -202,7 +201,7 @@ public class BookingService
     }
 
     /// <summary>
-    /// Müşteri telefonu güncellendikten sonra: tur tarihi gelmemiş, TR, SMS onayı, yeni numara eskiden farklıysa
+    /// Müşteri telefonu güncellendikten sonra: tur tarihi gelmemiş, +90 cep, SMS onayı, yeni numara eskiden farklıysa
     /// booking-confirmation SMS'ini yeni numaraya gönderir (desk kaydı sonrası Admin vb. düzenlemeler için).
     /// </summary>
     public async Task TryResendBookingConfirmationAfterPhoneChangeAsync(int customerId, string? phoneBeforeUpdate, CancellationToken ct = default)
@@ -213,8 +212,8 @@ public class BookingService
         var normOld = NormalizePhoneDigits(phoneBeforeUpdate);
         var normNew = NormalizePhoneDigits(customer.Phone);
         if (string.IsNullOrEmpty(normNew) || normOld == normNew) return;
-        if (!string.Equals(customer.Nationality?.Trim(), "TR", StringComparison.OrdinalIgnoreCase)) return;
         if (!customer.SmsConsent) return;
+        if (!SmsPhoneHelper.IsTurkishMobileForSms(customer.Phone)) return;
 
         var todayTr = GetTodayTurkeyDateOnly();
         var booking = await _db.DailyBookings
@@ -376,18 +375,6 @@ public class BookingService
 
         if (!p.KvkkConsent)
             return $"Kişi {index}: KVKK onayı zorunludur.";
-
-        var nationality = p.Nationality?.Trim() ?? "TR";
-        if (nationality == "TR")
-        {
-            if (string.IsNullOrWhiteSpace(p.IdNumber) || p.IdNumber.Length != 11 || !p.IdNumber.All(char.IsDigit))
-                return $"Kişi {index}: TC kimlik numarası 11 haneli rakam olmalıdır.";
-        }
-        else
-        {
-            if (!string.IsNullOrWhiteSpace(p.IdNumber) && p.IdNumber.Length > 50)
-                return $"Kişi {index}: Pasaport numarası çok uzun.";
-        }
 
         if (!p.BirthDate.HasValue)
             return $"Kişi {index}: Doğum tarihi zorunludur.";

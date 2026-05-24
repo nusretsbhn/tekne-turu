@@ -216,14 +216,14 @@ export function CoastGuard() {
     const rows = list
       .map(
         (r, i) =>
-          `<tr><td>${i + 1}</td><td>${escapeHtml(r.fullName)}</td><td>${r.phone ? escapeHtml(r.phone) : '—'}</td><td>${escapeHtml(r.nationality)}</td><td>${escapeHtml(r.idNumber)}</td><td>${r.birthDate ? escapeHtml(new Date(r.birthDate).toLocaleDateString('tr-TR')) : '—'}</td></tr>`
+          `<tr><td>${i + 1}</td><td>${escapeHtml(r.fullName)}</td><td>${r.phone ? escapeHtml(r.phone) : '—'}</td><td>${r.birthDate ? escapeHtml(new Date(r.birthDate).toLocaleDateString('tr-TR')) : '—'}</td></tr>`
       )
       .join('')
     w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${escapeHtml(title)}</title>
       <style>${PRINT_STYLES}</style></head><body>
       ${header}
       <p class="cg-passenger-title">${escapeHtml(title)}</p>
-      <table class="cg-list"><thead><tr><th>Sıra</th><th>Ad Soyad</th><th>Telefon</th><th>Uyruk</th><th>TC/Pasaport</th><th>Doğum Tarihi</th></tr></thead><tbody>
+      <table class="cg-list"><thead><tr><th>Sıra</th><th>Ad Soyad</th><th>Telefon</th><th>Doğum Tarihi</th></tr></thead><tbody>
       ${rows}
       </tbody></table></body></html>`)
     w.document.close()
@@ -257,8 +257,6 @@ export function CoastGuard() {
                 <th>Sıra</th>
                 <th>Ad Soyad</th>
                 <th>Telefon</th>
-                <th>Uyruk</th>
-                <th>TC/Pasaport</th>
                 <th>Doğum Tarihi</th>
               </tr>
             </thead>
@@ -268,8 +266,6 @@ export function CoastGuard() {
                   <td>{i + 1}</td>
                   <td>{r.fullName}</td>
                   <td>{r.phone ?? '—'}</td>
-                  <td>{r.nationality}</td>
-                  <td>{r.idNumber}</td>
                   <td>{r.birthDate ? new Date(r.birthDate).toLocaleDateString('tr-TR') : '—'}</td>
                 </tr>
               ))}

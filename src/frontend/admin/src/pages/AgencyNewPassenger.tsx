@@ -51,15 +51,14 @@ function toIsoBirthDate(yStr: string, mStr: string, dStr: string): string | null
 }
 
 function toBookingDto(p: AgencyPersonForm): BookingPersonDto {
-  const isOther = p.nationality === 'Diğer'
   const birthDate = toIsoBirthDate(p.birthYear, p.birthMonth, p.birthDay)
   return {
     fullName: p.fullName,
-    idNumber: isOther ? '' : p.idNumber.trim(),
-    nationality: p.nationality,
+    idNumber: '',
+    nationality: 'TR',
     birthDate,
     ageCategory: p.ageCategory,
-    phone: isOther ? null : (p.phone?.trim() || null),
+    phone: p.phone?.trim() || null,
     email: p.email?.trim() || null,
     accommodationPlace: p.accommodationPlace?.trim() || null,
     kvkkConsent: p.kvkkConsent,
@@ -77,16 +76,6 @@ function validatePersonForm(p: AgencyPersonForm, index: number): string | null {
   const birthDate = toIsoBirthDate(p.birthYear, p.birthMonth, p.birthDay)
   if (!birthDate) {
     return `Kişi ${i}: Geçerli bir doğum tarihi giriniz (gün, ay, yıl).`
-  }
-
-  if (p.nationality === 'TR') {
-    const id = (p.idNumber ?? '').replace(/\s/g, '')
-    if (!id || id.length !== 11 || !/^\d{11}$/.test(id)) {
-      return `Kişi ${i}: TC kimlik numarası 11 haneli rakam olmalıdır.`
-    }
-  } else {
-    const id = (p.idNumber ?? '').trim()
-    if (id.length > 50) return `Kişi ${i}: Pasaport / kimlik numarası çok uzun.`
   }
 
   const ageCat = p.ageCategory?.trim() ?? 'Yetişkin'
@@ -179,42 +168,12 @@ export function AgencyNewPassenger() {
             </label>
           </div>
         </div>
-        {persons.map((p, i) => {
-          const isOther = p.nationality === 'Diğer'
-          return (
+        {persons.map((p, i) => (
             <div key={i} className="card" style={{ marginBottom: 12, border: '1px solid var(--color-border)' }}>
               <div className="form-row">
                 <div className="form-group">
                   <label>Ad Soyad</label>
                   <input value={p.fullName} onChange={(e) => setPerson(i, { fullName: e.target.value })} required />
-                </div>
-                <div className="form-group">
-                  <label>Uyruk</label>
-                  <select
-                    value={p.nationality}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      if (v === 'Diğer') {
-                        setPerson(i, { nationality: v, idNumber: '', phone: '' })
-                      } else {
-                        setPerson(i, { nationality: v })
-                      }
-                    }}
-                  >
-                    <option value="TR">TR</option>
-                    <option value="Diğer">Diğer</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>{isOther ? 'Kimlik/Pasaport' : 'TC Kimlik No'}</label>
-                  <input
-                    value={p.idNumber}
-                    onChange={(e) => setPerson(i, { idNumber: isOther ? '' : e.target.value })}
-                    disabled={isOther}
-                    readOnly={isOther}
-                    placeholder={isOther ? 'Diğer uyruk için gerekli değil' : ''}
-                    style={isOther ? { opacity: 0.65, cursor: 'not-allowed' } : undefined}
-                  />
                 </div>
                 <div className="form-group">
                   <label>Doğum tarihi</label>
@@ -264,12 +223,9 @@ export function AgencyNewPassenger() {
                 <div className="form-group">
                   <label>Telefon</label>
                   <input
-                    value={isOther ? '' : (p.phone ?? '')}
+                    value={p.phone ?? ''}
                     onChange={(e) => setPerson(i, { phone: e.target.value })}
-                    disabled={isOther}
-                    readOnly={isOther}
-                    placeholder={isOther ? 'Diğer uyruk için gerekli değil' : ''}
-                    style={isOther ? { opacity: 0.65, cursor: 'not-allowed' } : undefined}
+                    placeholder="+90 5xx xxx xx xx"
                   />
                 </div>
                 <div className="form-group">
@@ -283,8 +239,7 @@ export function AgencyNewPassenger() {
                 </button>
               )}
             </div>
-          )
-        })}
+        ))}
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" className="btn btn-secondary" onClick={addPerson}>
             Kişi Ekle

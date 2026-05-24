@@ -953,8 +953,7 @@ adminGroup.MapPost("/sms/send-bulk", async (SendBulkSmsRequest body, SmsService 
     var skipped = 0;
     foreach (var c in customers)
     {
-        var isTr = string.Equals(c.Nationality?.Trim(), "TR", StringComparison.OrdinalIgnoreCase);
-        if (!isTr || string.IsNullOrWhiteSpace(c.Phone))
+        if (!SmsPhoneHelper.IsTurkishMobileForSms(c.Phone))
         {
             skipped++;
             continue;
@@ -2043,35 +2042,6 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
         }
     }
 
-    static DateOnly TodayInTurkey()
-    {
-        try
-        {
-            var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
-            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz));
-        }
-        catch
-        {
-            return DateOnly.FromDateTime(DateTime.UtcNow);
-        }
-    }
-
-    static bool TryParseDateOnlySetting(string? s, out DateOnly d)
-    {
-        d = default;
-        return !string.IsNullOrWhiteSpace(s) && DateOnly.TryParse(s!.Trim(), out d);
-    }
-
-    static bool IsMarketingPricingScheduleActive(DateOnly today, string? fromS, string? toS)
-    {
-        var hasFrom = TryParseDateOnlySetting(fromS, out var from);
-        var hasTo = TryParseDateOnlySetting(toS, out var to);
-        if (!hasFrom && !hasTo) return true;
-        if (hasFrom && today < from) return false;
-        if (hasTo && today > to) return false;
-        return true;
-    }
-
     var adultTrim = priceAdult?.Trim();
     var childTrim = priceChild?.Trim();
     var babyTrim = priceBaby?.Trim();
@@ -2080,23 +2050,15 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
     MarketingPricingDto? pricingForDto;
     if (hasStructuredPricing)
     {
-        if (!IsMarketingPricingScheduleActive(TodayInTurkey(), priceValidFrom, priceValidTo))
-        {
-            pricingForDto = null;
-            legacyPriceForDto = null;
-        }
-        else
-        {
-            var vf = string.IsNullOrWhiteSpace(priceValidFrom?.Trim()) ? null : priceValidFrom.Trim();
-            var vt = string.IsNullOrWhiteSpace(priceValidTo?.Trim()) ? null : priceValidTo.Trim();
-            pricingForDto = new MarketingPricingDto(
-                string.IsNullOrWhiteSpace(adultTrim) ? null : adultTrim,
-                string.IsNullOrWhiteSpace(childTrim) ? null : childTrim,
-                string.IsNullOrWhiteSpace(babyTrim) ? null : babyTrim,
-                vf,
-                vt);
-            legacyPriceForDto = null;
-        }
+        var vf = string.IsNullOrWhiteSpace(priceValidFrom?.Trim()) ? null : priceValidFrom.Trim();
+        var vt = string.IsNullOrWhiteSpace(priceValidTo?.Trim()) ? null : priceValidTo.Trim();
+        pricingForDto = new MarketingPricingDto(
+            string.IsNullOrWhiteSpace(adultTrim) ? null : adultTrim,
+            string.IsNullOrWhiteSpace(childTrim) ? null : childTrim,
+            string.IsNullOrWhiteSpace(babyTrim) ? null : babyTrim,
+            vf,
+            vt);
+        legacyPriceForDto = null;
     }
     else
     {

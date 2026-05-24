@@ -65,8 +65,7 @@ public class TourEndSmsBackgroundService : BackgroundService
 
         foreach (var b in bookings)
         {
-            var isTr = string.Equals(b.Customer.Nationality?.Trim(), "TR", StringComparison.OrdinalIgnoreCase);
-            if (!isTr || !b.Customer.SmsConsent || string.IsNullOrWhiteSpace(b.Customer.Phone))
+            if (!b.Customer.SmsConsent || !SmsPhoneHelper.IsTurkishMobileForSms(b.Customer.Phone))
                 continue;
             try
             {
