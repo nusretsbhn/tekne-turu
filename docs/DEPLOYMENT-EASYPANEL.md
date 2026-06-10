@@ -20,8 +20,18 @@
 - **Yapı Yolu**: `/`
 - **Yapı**: Dockerfile
 - **Dosya**: `Dockerfile.frontend`
-- **Port**: 80
+- **Port**: 80 (container port; Easypanel’de mutlaka yayınlayın)
+- **Health check** (varsa): Path `/health`, port `80`
 - **Domain**: `vikingoludeniz.xyz` – Path: `/` (veya boş)
+
+### Frontend sarı / log boş
+
+Sarı nokta + CPU/Bellek 0 + boş günlük = **container çalışmıyor** (nginx logu yok demektir).
+
+1. **Dağıtımlar** sekmesine gidin — son deploy **Başarılı** mı? Kırmızıysa build logunun son satırlarına bakın (GitHub token, `npm run build`, bellek).
+2. **Ağ** sekmesi: port **80** tanımlı ve domain `/` bu servise bağlı olmalı.
+3. GitHub **classic token** (`repo`) Easypanel ayarlarında güncel olmalı → **Dağıt**.
+4. Build 5 frontend derlediği için VPS’te **en az 2 GB RAM** önerilir; build sırasında OOM olursa deploy başarısız olur.
 
 ## 2. API Servisi (mevcut)
 
