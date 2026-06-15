@@ -1,8 +1,9 @@
-import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
-import { fetchMarketingLandingData, submitPreReservation, type MarketingLandingData } from '../api'
+import { useEffect, useState, type CSSProperties } from 'react'
+import { fetchMarketingLandingData, type MarketingLandingData } from '../api'
+import { PreReservationForm } from '../components/PreReservationForm'
+import { PRE_RESERVATION_I18N } from '../i18n/preReservation'
 import { toYoutubeEmbedUrl } from '../utils/youtubeEmbed'
 
-type Screen = 'idle' | 'success' | 'error'
 type Lang = 'tr' | 'en'
 const MARKETING_STATIC_GOOGLE_REVIEWS_URL = 'https://www.google.com/search?sca_esv=ab7f61c36d6d1228&sxsrf=ANbL-n7dlpH9UBw4cmPqGk6RneLb6TnuBA:1774610025487&q=viking+%C3%B6l%C3%BCdeniz+tekne+turu&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOfOhJhUgwsNaI_QFa_833vXpQA55CZRoUMgsTNFR7bo-rzmdEje5VreP5sx6tJXOy3b1ju8%3D&uds=ALYpb_l6DyU7gEufbC-T-1UgqmR0JAkPPHYZ9DDWKcNgfeGaoBLt3PjEvRIy9hi_WUS6w3E1PCpVud2JKkTGOm5ZbkRlvQj3xfFDNPoUnxJL2uQFGl4qZgaJdHnsf4_riZItDcn7tWYb&sa=X&ved=2ahUKEwjzkrzB-b-TAxX8RvEDHd_hHUcQ3PALegQIGRAE&biw=1440&bih=778&dpr=2'
 
@@ -45,13 +46,6 @@ const I18N = {
     rules: 'Tekne Kuralları',
     openPdf: 'PDF Aç',
     socialsTitle: 'Sosyal Medyada Biz',
-    preReservationTitle: 'Ön Rezervasyon',
-    preReservationDesc: 'Talebinizi bırakın, sizi en kısa sürede arayalım.',
-    close: 'Kapat',
-    send: 'Talep Gönder',
-    sending: 'Gönderiliyor...',
-    requestReceived: 'Talebiniz alındı, en kısa sürede dönüş yapacağız.',
-    requestFailed: 'Talebiniz kaydedilemedi.',
   },
   en: {
     loading: 'Loading...',
@@ -86,13 +80,6 @@ const I18N = {
     rules: 'Boat Rules',
     openPdf: 'Open PDF',
     socialsTitle: 'Find Us on Social Media',
-    preReservationTitle: 'Pre-Reservation',
-    preReservationDesc: 'Leave your request and we will call you shortly.',
-    close: 'Close',
-    send: 'Send Request',
-    sending: 'Sending...',
-    requestReceived: 'Your request has been received. We will contact you soon.',
-    requestFailed: 'Your request could not be saved.',
   },
 } as const
 
@@ -133,19 +120,6 @@ export function MarketingPage() {
   const [error, setError] = useState<string | null>(null)
   const [lang, setLang] = useState<Lang>('tr')
   const [modalOpen, setModalOpen] = useState(false)
-  const [form, setForm] = useState({
-    fullName: '',
-    phone: '',
-    email: '',
-    hotelName: '',
-    adultCount: 2,
-    childCount: 0,
-    babyCount: 0,
-    tourDate: '',
-  })
-  const [submitting, setSubmitting] = useState(false)
-  const [submitStatus, setSubmitStatus] = useState<Screen>('idle')
-  const [submitMessage, setSubmitMessage] = useState('')
   const [copiedField, setCopiedField] = useState<'companyName' | 'iban' | null>(null)
 
   useEffect(() => {
@@ -157,33 +131,7 @@ export function MarketingPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!form.fullName.trim() || !form.phone.trim() || !form.tourDate) return
-    setSubmitting(true)
-    setSubmitStatus('idle')
-    setSubmitMessage('')
-    try {
-      await submitPreReservation({
-        fullName: form.fullName.trim(),
-        phone: form.phone.trim(),
-        email: form.email.trim() || undefined,
-        hotelName: form.hotelName.trim() || undefined,
-        adultCount: Number(form.adultCount) || 0,
-        childCount: Number(form.childCount) || 0,
-        babyCount: Number(form.babyCount) || 0,
-        tourDate: form.tourDate,
-      })
-      setSubmitStatus('success')
-      setSubmitMessage(I18N[lang].requestReceived)
-      setForm((f) => ({ ...f, fullName: '', phone: '', email: '', hotelName: '' }))
-    } catch (err) {
-      setSubmitStatus('error')
-      setSubmitMessage(err instanceof Error ? err.message : I18N[lang].requestFailed)
-    } finally {
-      setSubmitting(false)
-    }
-  }
+  const preResCopy = PRE_RESERVATION_I18N[lang]
 
   if (loading) {
     return (
@@ -562,121 +510,9 @@ export function MarketingPage() {
       {modalOpen && (
         <div style={styles.modalBackdrop} onClick={() => setModalOpen(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0, marginBottom: 12 }}>{t.preReservationTitle}</h2>
-            <p style={{ marginTop: 0, marginBottom: 16, fontSize: 14, color: '#555' }}>
-              {t.preReservationDesc}
-            </p>
-            <form onSubmit={handleSubmit}>
-              <div style={styles.formRow}>
-                <label style={styles.label}>Ad Soyad *</label>
-                <input
-                  style={styles.input}
-                  value={form.fullName}
-                  onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
-                  required
-                />
-              </div>
-              <div style={styles.formRow}>
-                <label style={styles.label}>Telefon *</label>
-                <input
-                  style={styles.input}
-                  value={form.phone}
-                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                  required
-                />
-              </div>
-              <div style={styles.formRow}>
-                <label style={styles.label}>E-posta</label>
-                <input
-                  type="email"
-                  style={styles.input}
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                />
-              </div>
-              <div style={styles.formRow}>
-                <label style={styles.label}>Otel Adı</label>
-                <input
-                  style={styles.input}
-                  value={form.hotelName}
-                  onChange={(e) => setForm((f) => ({ ...f, hotelName: e.target.value }))}
-                />
-              </div>
-              <div style={styles.formRowGrid}>
-                <div>
-                  <label style={styles.label}>Yetişkin</label>
-                  <input
-                    type="number"
-                    min={0}
-                    style={styles.input}
-                    value={form.adultCount}
-                    onChange={(e) => setForm((f) => ({ ...f, adultCount: Number(e.target.value) }))}
-                  />
-                </div>
-                <div>
-                  <label style={styles.label}>Çocuk</label>
-                  <input
-                    type="number"
-                    min={0}
-                    style={styles.input}
-                    value={form.childCount}
-                    onChange={(e) => setForm((f) => ({ ...f, childCount: Number(e.target.value) }))}
-                  />
-                </div>
-                <div>
-                  <label style={styles.label}>Bebek</label>
-                  <input
-                    type="number"
-                    min={0}
-                    style={styles.input}
-                    value={form.babyCount}
-                    onChange={(e) => setForm((f) => ({ ...f, babyCount: Number(e.target.value) }))}
-                  />
-                </div>
-              </div>
-              <div style={styles.formRow}>
-                <label style={styles.label}>Tur Tarihi *</label>
-                <input
-                  type="date"
-                  style={styles.input}
-                  value={form.tourDate}
-                  onChange={(e) => setForm((f) => ({ ...f, tourDate: e.target.value }))}
-                  required
-                />
-              </div>
-              {submitStatus !== 'idle' && (
-                <p
-                  style={{
-                    marginTop: 8,
-                    marginBottom: 0,
-                    fontSize: 14,
-                    color: submitStatus === 'success' ? '#0a0' : '#c00',
-                  }}
-                >
-                  {submitMessage}
-                </p>
-              )}
-              <div style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  style={styles.secondaryBtn}
-                  onClick={() => setModalOpen(false)}
-                >
-                  {t.close}
-                </button>
-                <button
-                  type="submit"
-                  style={{
-                    ...styles.primaryBtn,
-                    opacity: submitting ? 0.7 : 1,
-                    cursor: submitting ? 'wait' : 'pointer',
-                  }}
-                  disabled={submitting}
-                >
-                  {submitting ? t.sending : t.send}
-                </button>
-              </div>
-            </form>
+            <h2 style={{ marginTop: 0, marginBottom: 12 }}>{preResCopy.title}</h2>
+            <p style={{ marginTop: 0, marginBottom: 16, fontSize: 14, color: '#555' }}>{preResCopy.desc}</p>
+            <PreReservationForm lang={lang} onClose={() => setModalOpen(false)} />
           </div>
         </div>
       )}
