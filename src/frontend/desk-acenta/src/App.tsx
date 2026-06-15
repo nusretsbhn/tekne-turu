@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from 'react'
 import { emptyPerson, type PersonForm } from './types'
 import { allPersonsValid } from './validation'
 import { createBooking, fetchAgencyByCode } from './api'
-import { calculateAgeCategory } from './ageCategory'
 import { PersonCard } from './components/PersonCard'
 
 type Screen = 'start' | 'form' | 'thankyou'
@@ -83,12 +82,6 @@ export default function App() {
 
   const handleTourDateChange = useCallback((newDate: string) => {
     setTourDate(newDate)
-    setPersons((prev) =>
-      prev.map((p) => {
-        const cat = calculateAgeCategory(p.birthDate, newDate)
-        return cat ? { ...p, ageCategory: cat } : p
-      }),
-    )
   }, [])
 
   const removePerson = useCallback((id: string) => {

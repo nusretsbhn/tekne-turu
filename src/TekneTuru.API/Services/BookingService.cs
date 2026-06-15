@@ -40,7 +40,7 @@ public class BookingService
         for (var i = 0; i < persons.Count; i++)
         {
             var p = persons[i];
-            var err = ValidatePerson(p, i + 1);
+            var err = ValidatePerson(p, i + 1, requireBirthDate: string.IsNullOrWhiteSpace(agencyName));
             if (err != null) errors.Add(err);
         }
 
@@ -125,7 +125,9 @@ public class BookingService
             {
                 TourDate = date,
                 Customer = customer,
-                AgeCategory = p.AgeCategory?.Trim() ?? "Yetişkin",
+                AgeCategory = string.IsNullOrWhiteSpace(agencyName)
+                    ? (p.AgeCategory?.Trim() ?? "Yetişkin")
+                    : "Yetişkin",
                 CheckedIn = false,
                 AgencyName = string.IsNullOrWhiteSpace(agencyName) ? null : agencyName.Trim(),
                 UseShuttle = useShuttle,
@@ -368,7 +370,7 @@ public class BookingService
         return idList.Count;
     }
 
-    private static string? ValidatePerson(BookingPersonDto p, int index)
+    private static string? ValidatePerson(BookingPersonDto p, int index, bool requireBirthDate = true)
     {
         if (string.IsNullOrWhiteSpace(p.FullName) || p.FullName.Trim().Length < 3)
             return $"Kişi {index}: Ad soyad en az 3 karakter olmalıdır.";
@@ -376,10 +378,17 @@ public class BookingService
         if (!p.KvkkConsent)
             return $"Kişi {index}: KVKK onayı zorunludur.";
 
-        if (!p.BirthDate.HasValue)
-            return $"Kişi {index}: Doğum tarihi zorunludur.";
-        if (DateOnly.FromDateTime(p.BirthDate.Value) > DateOnly.FromDateTime(DateTime.UtcNow))
+        if (requireBirthDate)
+        {
+            if (!p.BirthDate.HasValue)
+                return $"Kişi {index}: Doğum tarihi zorunludur.";
+            if (DateOnly.FromDateTime(p.BirthDate.Value) > DateOnly.FromDateTime(DateTime.UtcNow))
+                return $"Kişi {index}: Doğum tarihi geçmiş bir tarih olmalıdır.";
+        }
+        else if (p.BirthDate.HasValue && DateOnly.FromDateTime(p.BirthDate.Value) > DateOnly.FromDateTime(DateTime.UtcNow))
+        {
             return $"Kişi {index}: Doğum tarihi geçmiş bir tarih olmalıdır.";
+        }
 
         var ageCat = p.AgeCategory?.Trim() ?? "Yetişkin";
         if (ageCat is not ("Yetişkin" or "Çocuk" or "Bebek"))
