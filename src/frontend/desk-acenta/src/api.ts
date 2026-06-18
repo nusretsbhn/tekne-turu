@@ -1,4 +1,5 @@
 import type { PersonForm } from './types'
+import { phoneForApi } from './phoneInput'
 
 /** Link ile açıldığında (?agency=code) acenta adını alır; auth gerekmez. */
 export async function fetchAgencyByCode(code: string): Promise<{ name: string }> {
@@ -23,7 +24,7 @@ export async function createBooking(
       nationality: p.nationality,
       birthDate: null,
       ageCategory: 'Yetişkin' as const,
-      phone: p.phone?.trim() || null,
+      phone: phoneForApi(p.phone),
       email: null,
       accommodationPlace: p.accommodationPlace?.trim() || null,
       kvkkConsent: p.kvkkConsent,

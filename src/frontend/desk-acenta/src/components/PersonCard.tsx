@@ -1,5 +1,7 @@
 import type { PersonForm } from '../types'
 import { validatePerson } from '../validation'
+import { formatPhoneInput } from '../phoneInput'
+
 const CONSENT_TEXT_URL = '/api/legal/consent'
 
 const styles = {
@@ -63,10 +65,11 @@ export function PersonCard({ person, index, canRemove, expanded, onToggle, onCha
             <label style={styles.label}>Telefon <span style={styles.labelEn}>/ Phone</span></label>
             <input
               type="tel"
+              inputMode="numeric"
               style={styles.input}
               value={person.phone}
-              onChange={(e) => onChange({ phone: e.target.value })}
-              placeholder="+90 5xx xxx xx xx"
+              onChange={(e) => onChange({ phone: formatPhoneInput(e.target.value) })}
+              placeholder="05xx xxx xx xx"
             />
           </div>
           <div style={styles.full}>

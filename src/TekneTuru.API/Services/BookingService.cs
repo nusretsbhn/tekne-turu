@@ -47,6 +47,33 @@ public class BookingService
         if (errors.Count > 0)
             return (false, string.Join(" ", errors), null);
 
+        var isAgencyBooking = !string.IsNullOrWhiteSpace(agencyName);
+
+        if (isAgencyBooking)
+        {
+            var batchNames = new HashSet<string>();
+            foreach (var p in persons)
+            {
+                var nameNorm = NormalizeName(p.FullName);
+                if (!batchNames.Add(nameNorm))
+                    return (false, "Aynı kayıtta aynı ad soyad birden fazla kez eklenemez.", null);
+            }
+
+            var existingNames = await _db.DailyBookings
+                .AsNoTracking()
+                .Where(b => b.TourDate == date)
+                .Select(b => b.Customer!.FullName)
+                .ToListAsync(ct);
+            var existingNameSet = new HashSet<string>(existingNames.Select(NormalizeName));
+
+            foreach (var p in persons)
+            {
+                if (existingNameSet.Contains(NormalizeName(p.FullName)))
+                    return (false, "Bu tur tarihi için bu ad soyad ile kayıt zaten mevcut.", null);
+            }
+        }
+        else
+        {
         // Aynı tur günü + aynı ad soyad + aynı telefon: ikinci kayıt yok (telefon boşsa bu kural uygulanmaz).
         var batchSeen = new HashSet<(string NameNorm, string PhoneNorm)>();
         foreach (var p in persons)
@@ -77,6 +104,7 @@ public class BookingService
             if (string.IsNullOrEmpty(phoneNorm)) continue;
             if (existingNamePhone.Contains((NormalizeName(p.FullName), phoneNorm)))
                 return (false, "Bu tur tarihi için bu ad soyad ve telefonla kayıt zaten mevcut.", null);
+        }
         }
 
         var bookingIds = new List<int>();

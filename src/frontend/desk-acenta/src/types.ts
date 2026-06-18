@@ -21,7 +21,7 @@ export const emptyPerson = (): PersonForm => ({
   nationality: 'TR',
   birthDate: '',
   ageCategory: 'Yetişkin',
-  phone: '',
+  phone: '05',
   accommodationPlace: '',
   kvkkConsent: false,
   smsConsent: false,

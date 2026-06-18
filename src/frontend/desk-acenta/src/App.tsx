@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { emptyPerson, type PersonForm } from './types'
-import { allPersonsValid } from './validation'
+import { allPersonsValid, validateGroup } from './validation'
 import { createBooking, fetchAgencyByCode } from './api'
 import { PersonCard } from './components/PersonCard'
 
@@ -162,6 +162,7 @@ export default function App() {
     )
   }
 
+  const groupError = validateGroup(persons, tourDate)
   const valid = allPersonsValid(persons, tourDate)
 
   return (
@@ -181,7 +182,10 @@ export default function App() {
         />
         {agencyLocked && <span style={{ fontSize: 12, color: '#666', marginLeft: 8 }}>(Link ile açıldı, değiştirilemez)</span>}
       </div>
-      {(!valid || !agencyName.trim()) && persons.length > 0 && <p style={styles.error}>Zorunlu alanları doldurunuz. / Please fill in required fields.</p>}
+      {groupError && <p style={styles.error}>{groupError}</p>}
+      {!groupError && persons.length > 0 && (!valid || !agencyName.trim()) && (
+        <p style={styles.error}>Zorunlu alanları doldurunuz. / Please fill in required fields.</p>
+      )}
       {error && <p style={styles.error}>{error}</p>}
       {persons.map((p, i) => (
         <PersonCard
