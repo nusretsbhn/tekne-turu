@@ -43,6 +43,7 @@ export function Layout() {
     { to: '/coastguard', label: 'Sahil Güvenlik', badge: false, badgeType: 'none' as const },
     { to: '/tour', label: 'Tur Bilgisi', badge: false, badgeType: 'none' as const },
     { to: '/stops', label: 'Duraklar', badge: false, badgeType: 'none' as const },
+    { to: '/other-activities', label: 'Diğer Aktiviteler', badge: false, badgeType: 'none' as const },
     { to: '/sms', label: 'SMS', badge: false, badgeType: 'none' as const },
     { to: '/sms-history', label: 'SMS Geçmişi', badge: false, badgeType: 'none' as const },
     { to: '/feedback', label: 'Dilek / İstek / Şikayet', badge: true, badgeType: 'feedback' as const },

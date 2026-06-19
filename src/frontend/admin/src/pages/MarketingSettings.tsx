@@ -22,6 +22,7 @@ const KEYS = [
   'MarketingRedbookUrl',
   'MarketingCompanyName',
   'MarketingCompanyIban',
+  'MarketingWhatsAppPhone',
 ] as const
 
 type GalleryItem = { url: string; title?: string | null }
@@ -263,6 +264,18 @@ export function MarketingSettings() {
               />
             </div>
           </div>
+        </div>
+
+        <div className="form-group">
+          <label>WhatsApp iletişim numarası</label>
+          <input
+            value={values.MarketingWhatsAppPhone ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, MarketingWhatsAppPhone: e.target.value }))}
+            placeholder="905354033869 veya 0535 403 38 69"
+          />
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 6 }}>
+            Diğer aktivitelerde &quot;Gizli fiyat&quot; seçiliyken &quot;Bilgi Alın&quot; butonu bu numaraya WhatsApp konuşması başlatır.
+          </p>
         </div>
 
         <div className="form-group">

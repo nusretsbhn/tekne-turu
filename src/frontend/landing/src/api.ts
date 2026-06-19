@@ -95,6 +95,22 @@ export async function submitThanksSurvey(answers: string[]): Promise<void> {
 
 export type MarketingGalleryItem = { url: string; title?: string | null }
 
+export type OtherActivityMedia = { url: string; kind: string; isCover: boolean }
+
+export type OtherActivityItem = {
+  id: number
+  name: string
+  tripTimes: string | null
+  departurePoint: string | null
+  duration: string | null
+  description: string | null
+  inclusions: string | null
+  price: string | null
+  hidePrice: boolean
+  media: OtherActivityMedia[]
+  coverUrl: string | null
+}
+
 /** Tanıtım sayfası yapılandırılmış fiyatlar (admin); geçerlilik API tarafında kontrol edilir. */
 export type MarketingPricing = {
   adult: string | null
@@ -137,6 +153,8 @@ export type MarketingLandingData = {
   redbookUrl?: string | null
   companyName?: string | null
   companyIban?: string | null
+  otherActivities?: OtherActivityItem[]
+  marketingWhatsAppPhone?: string | null
 }
 
 export async function fetchMarketingLandingData(): Promise<MarketingLandingData> {

@@ -12,6 +12,7 @@ import { SmsHistory } from './pages/SmsHistory'
 import { Feedback } from './pages/Feedback'
 import { Users } from './pages/Users'
 import { MarketingSettings } from './pages/MarketingSettings'
+import { OtherActivities } from './pages/OtherActivities'
 import { PreReservations } from './pages/PreReservations'
 import { MarketingSales } from './pages/MarketingSales'
 import { BiletKes } from './pages/BiletKes'
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="acentalar" element={<RequireRole role="Admin"><Acentalar /></RequireRole>} />
         <Route path="survey-reports" element={<RequireRole role="Admin"><SurveyReports /></RequireRole>} />
         <Route path="marketing-settings" element={<RequireRole role="Admin"><MarketingSettings /></RequireRole>} />
+        <Route path="other-activities" element={<RequireRole role="Admin"><OtherActivities /></RequireRole>} />
         <Route path="settings" element={<RequireRole role="Admin"><Settings /></RequireRole>} />
         <Route path="agency/dashboard" element={<RequireRole role="Acenta"><AgencyDashboard /></RequireRole>} />
         <Route path="agency/new-passenger" element={<RequireRole role="Acenta"><AgencyNewPassenger /></RequireRole>} />

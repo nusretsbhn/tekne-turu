@@ -33,6 +33,8 @@ public record MarketingLandingDto(
     string? ServiceLocationMapEmbedUrl,
     string? RedbookUrl,
     string? CompanyName,
-    string? CompanyIban
+    string? CompanyIban,
+    List<OtherActivityLandingDto> OtherActivities,
+    string? MarketingWhatsAppPhone
 );
 

@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { fetchMarketingLandingData, type MarketingLandingData } from '../api'
 import { PreReservationForm } from '../components/PreReservationForm'
+import { MarketingOtherActivities } from '../components/MarketingOtherActivities'
 import { PRE_RESERVATION_I18N } from '../i18n/preReservation'
 import { toYoutubeEmbedUrl } from '../utils/youtubeEmbed'
 
@@ -490,6 +491,15 @@ export function MarketingPage() {
               )}
             </div>
           </section>
+        )}
+
+        {(data.otherActivities?.length ?? 0) > 0 && (
+          <MarketingOtherActivities
+            activities={data.otherActivities!}
+            whatsappPhone={data.marketingWhatsAppPhone}
+            lang={lang}
+            resolveUrl={resolveUrl}
+          />
         )}
 
         <section style={styles.section}>

@@ -785,6 +785,66 @@ export async function changeAcentaPassword(
   }
 }
 
+export type ActivityMediaItem = { url: string; kind: 'image' | 'video'; isCover: boolean }
+
+export type OtherActivityItem = {
+  id: number
+  name: string
+  tripTimes: string | null
+  departurePoint: string | null
+  duration: string | null
+  description: string | null
+  inclusions: string | null
+  price: string | null
+  hidePrice: boolean
+  mediaJson: string | null
+  orderIndex: number
+  isActive: boolean
+}
+
+export type OtherActivityPayload = {
+  name?: string
+  tripTimes?: string | null
+  departurePoint?: string | null
+  duration?: string | null
+  description?: string | null
+  inclusions?: string | null
+  price?: string | null
+  hidePrice?: boolean
+  mediaJson?: string | null
+  isActive?: boolean
+  orderIndex?: number
+}
+
+export async function fetchOtherActivities(token: string): Promise<OtherActivityItem[]> {
+  const res = await apiGet(token, '/api/other-activities/')
+  return res.json()
+}
+
+export async function createOtherActivity(token: string, body: OtherActivityPayload): Promise<{ id: number }> {
+  const res = await fetch('/api/other-activities/', { method: 'POST', headers: headers(token), body: JSON.stringify(body) })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(data?.error ?? 'Eklenemedi')
+  }
+  return res.json()
+}
+
+export async function updateOtherActivity(token: string, id: number, body: OtherActivityPayload): Promise<void> {
+  const res = await fetch(`/api/other-activities/${id}`, { method: 'PUT', headers: headers(token), body: JSON.stringify(body) })
+  if (!res.ok) throw new Error('Güncellenemedi')
+}
+
+export async function deleteOtherActivity(token: string, id: number): Promise<void> {
+  const res = await fetch(`/api/other-activities/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+  if (!res.ok) throw new Error('Silinemedi')
+}
+
+export async function reorderOtherActivities(token: string, orderedIds: number[]): Promise<void> {
+  const res = await fetch('/api/other-activities/reorder', { method: 'POST', headers: headers(token), body: JSON.stringify({ orderedIds }) })
+  if (!res.ok) throw new Error('Sıra güncellenemedi')
+}
+
 export type BookingPersonDto = {
   fullName: string
   idNumber: string

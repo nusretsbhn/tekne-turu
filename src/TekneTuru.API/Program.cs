@@ -333,6 +333,8 @@ if (!string.IsNullOrEmpty(conn))
         db.Settings.Add(new Setting { Key = "MarketingCompanyName", Value = "", UpdatedAt = DateTime.UtcNow });
     if (!await db.Settings.AnyAsync(s => s.Key == "MarketingCompanyIban"))
         db.Settings.Add(new Setting { Key = "MarketingCompanyIban", Value = "", UpdatedAt = DateTime.UtcNow });
+    if (!await db.Settings.AnyAsync(s => s.Key == "MarketingWhatsAppPhone"))
+        db.Settings.Add(new Setting { Key = "MarketingWhatsAppPhone", Value = "905354033869", UpdatedAt = DateTime.UtcNow });
     if (!await db.Settings.AnyAsync(s => s.Key == "DeskRegistrationUrl"))
         db.Settings.Add(new Setting { Key = "DeskRegistrationUrl", Value = "https://vikingoludeniz.xyz/desk", UpdatedAt = DateTime.UtcNow });
     if (!await db.Settings.AnyAsync(s => s.Key == "DeskConsentText"))
@@ -369,6 +371,22 @@ if (!string.IsNullOrEmpty(conn))
             ""Id"" SERIAL PRIMARY KEY,
             ""CreatedAt"" TIMESTAMP NOT NULL,
             ""AnswersJson"" TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS ""OtherActivities"" (
+            ""Id"" SERIAL PRIMARY KEY,
+            ""Name"" VARCHAR(256) NOT NULL,
+            ""TripTimes"" TEXT NULL,
+            ""DeparturePoint"" VARCHAR(512) NULL,
+            ""Duration"" VARCHAR(128) NULL,
+            ""Description"" TEXT NULL,
+            ""Inclusions"" TEXT NULL,
+            ""Price"" VARCHAR(128) NULL,
+            ""HidePrice"" BOOLEAN NOT NULL DEFAULT FALSE,
+            ""MediaJson"" TEXT NULL,
+            ""OrderIndex"" INTEGER NOT NULL DEFAULT 0,
+            ""IsActive"" BOOLEAN NOT NULL DEFAULT TRUE,
+            ""CreatedAt"" TIMESTAMP NOT NULL,
+            ""UpdatedAt"" TIMESTAMP NOT NULL
         );
         CREATE TABLE IF NOT EXISTS ""SmsConsents"" (
             ""Id"" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1706,6 +1724,82 @@ stopsGroup.MapPost("/reorder", async (ReorderStopsRequest body, AppDbContext db,
     return Results.Ok();
 });
 
+var otherActivitiesGroup = app.MapGroup("/api/other-activities").RequireAuthorization();
+otherActivitiesGroup.MapGet("/", async (AppDbContext db, CancellationToken ct) =>
+{
+    var list = await db.OtherActivities.AsNoTracking()
+        .OrderBy(a => a.OrderIndex)
+        .Select(a => new OtherActivityListItemDto(
+            a.Id, a.Name, a.TripTimes, a.DeparturePoint, a.Duration, a.Description, a.Inclusions,
+            a.Price, a.HidePrice, a.MediaJson, a.OrderIndex, a.IsActive))
+        .ToListAsync(ct);
+    return Results.Ok(list);
+});
+otherActivitiesGroup.MapPost("/", async (OtherActivityCreateDto body, AppDbContext db, CancellationToken ct) =>
+{
+    var maxOrder = await db.OtherActivities.MaxAsync(a => (int?)a.OrderIndex, ct) ?? 0;
+    var now = DateTime.UtcNow;
+    var activity = new OtherActivity
+    {
+        Name = body.Name?.Trim() ?? "",
+        TripTimes = string.IsNullOrWhiteSpace(body.TripTimes) ? null : body.TripTimes.Trim(),
+        DeparturePoint = string.IsNullOrWhiteSpace(body.DeparturePoint) ? null : body.DeparturePoint.Trim(),
+        Duration = string.IsNullOrWhiteSpace(body.Duration) ? null : body.Duration.Trim(),
+        Description = string.IsNullOrWhiteSpace(body.Description) ? null : body.Description.Trim(),
+        Inclusions = string.IsNullOrWhiteSpace(body.Inclusions) ? null : body.Inclusions.Trim(),
+        Price = string.IsNullOrWhiteSpace(body.Price) ? null : body.Price.Trim(),
+        HidePrice = body.HidePrice ?? false,
+        MediaJson = string.IsNullOrWhiteSpace(body.MediaJson) ? "[]" : body.MediaJson.Trim(),
+        OrderIndex = maxOrder + 1,
+        IsActive = body.IsActive ?? true,
+        CreatedAt = now,
+        UpdatedAt = now,
+    };
+    if (string.IsNullOrWhiteSpace(activity.Name))
+        return Results.BadRequest(new { error = "Aktivite adı zorunludur." });
+    db.OtherActivities.Add(activity);
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new { activity.Id });
+});
+otherActivitiesGroup.MapPut("/{id:int}", async (int id, OtherActivityUpdateDto body, AppDbContext db, CancellationToken ct) =>
+{
+    var activity = await db.OtherActivities.FindAsync(new object[] { id }, ct);
+    if (activity == null) return Results.NotFound();
+    if (body.Name != null) activity.Name = body.Name.Trim();
+    if (body.TripTimes != null) activity.TripTimes = string.IsNullOrWhiteSpace(body.TripTimes) ? null : body.TripTimes.Trim();
+    if (body.DeparturePoint != null) activity.DeparturePoint = string.IsNullOrWhiteSpace(body.DeparturePoint) ? null : body.DeparturePoint.Trim();
+    if (body.Duration != null) activity.Duration = string.IsNullOrWhiteSpace(body.Duration) ? null : body.Duration.Trim();
+    if (body.Description != null) activity.Description = string.IsNullOrWhiteSpace(body.Description) ? null : body.Description.Trim();
+    if (body.Inclusions != null) activity.Inclusions = string.IsNullOrWhiteSpace(body.Inclusions) ? null : body.Inclusions.Trim();
+    if (body.Price != null) activity.Price = string.IsNullOrWhiteSpace(body.Price) ? null : body.Price.Trim();
+    if (body.HidePrice.HasValue) activity.HidePrice = body.HidePrice.Value;
+    if (body.MediaJson != null) activity.MediaJson = body.MediaJson.Trim();
+    if (body.IsActive.HasValue) activity.IsActive = body.IsActive.Value;
+    if (body.OrderIndex.HasValue) activity.OrderIndex = body.OrderIndex.Value;
+    activity.UpdatedAt = DateTime.UtcNow;
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new { activity.Id });
+});
+otherActivitiesGroup.MapDelete("/{id:int}", async (int id, AppDbContext db, CancellationToken ct) =>
+{
+    var activity = await db.OtherActivities.FindAsync(new object[] { id }, ct);
+    if (activity == null) return Results.NotFound();
+    db.OtherActivities.Remove(activity);
+    await db.SaveChangesAsync(ct);
+    return Results.Ok();
+});
+otherActivitiesGroup.MapPost("/reorder", async (ReorderOtherActivitiesRequest body, AppDbContext db, CancellationToken ct) =>
+{
+    if (body?.OrderedIds == null || body.OrderedIds.Count == 0) return Results.BadRequest();
+    for (var i = 0; i < body.OrderedIds.Count; i++)
+    {
+        var activity = await db.OtherActivities.FindAsync(new object[] { body.OrderedIds[i] }, ct);
+        if (activity != null) activity.OrderIndex = i;
+    }
+    await db.SaveChangesAsync(ct);
+    return Results.Ok();
+});
+
 var uploadGroup = app.MapGroup("/api/upload").RequireAuthorization();
 uploadGroup.MapPost("/", async (HttpRequest request, CancellationToken ct) =>
 {
@@ -2003,6 +2097,51 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
     settings.TryGetValue("MarketingRedbookUrl", out var marketingRedbookUrl);
     settings.TryGetValue("MarketingCompanyName", out var marketingCompanyName);
     settings.TryGetValue("MarketingCompanyIban", out var marketingCompanyIban);
+    settings.TryGetValue("MarketingWhatsAppPhone", out var marketingWhatsAppPhone);
+
+    var otherActivityRows = await db.OtherActivities.AsNoTracking()
+        .Where(a => a.IsActive)
+        .OrderBy(a => a.OrderIndex)
+        .ToListAsync(ct);
+    var otherActivitiesLanding = new List<OtherActivityLandingDto>();
+    foreach (var a in otherActivityRows)
+    {
+        var media = new List<OtherActivityMediaDto>();
+        if (!string.IsNullOrWhiteSpace(a.MediaJson))
+        {
+            try
+            {
+                var parsed = System.Text.Json.JsonSerializer.Deserialize<List<OtherActivityMediaDto>>(
+                    a.MediaJson,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (parsed != null)
+                {
+                    media = parsed
+                        .Where(m => !string.IsNullOrWhiteSpace(m.Url))
+                        .Select(m => new OtherActivityMediaDto(
+                            ToAbsolute(m.Url) ?? "",
+                            string.Equals(m.Kind, "video", StringComparison.OrdinalIgnoreCase) ? "video" : "image",
+                            m.IsCover))
+                        .ToList();
+                }
+            }
+            catch { /* ignore */ }
+        }
+        var coverUrl = media.FirstOrDefault(m => m.IsCover && m.Kind == "image")?.Url
+            ?? media.FirstOrDefault(m => m.Kind == "image")?.Url;
+        otherActivitiesLanding.Add(new OtherActivityLandingDto(
+            a.Id,
+            a.Name,
+            a.TripTimes,
+            a.DeparturePoint,
+            a.Duration,
+            a.Description,
+            a.Inclusions,
+            a.Price,
+            a.HidePrice,
+            media,
+            coverUrl));
+    }
 
     var googleReviewsForPage = string.IsNullOrWhiteSpace(marketingGoogleReviewsUrl) ? globalGoogleReviewsUrl : marketingGoogleReviewsUrl;
 
@@ -2096,7 +2235,9 @@ app.MapGet("/api/marketing/landing", async (AppDbContext db, HttpContext httpCon
         marketingServiceLocationMapEmbedUrl,
         marketingRedbookUrl,
         string.IsNullOrWhiteSpace(marketingCompanyName) ? null : marketingCompanyName.Trim(),
-        string.IsNullOrWhiteSpace(marketingCompanyIban) ? null : marketingCompanyIban.Trim()
+        string.IsNullOrWhiteSpace(marketingCompanyIban) ? null : marketingCompanyIban.Trim(),
+        otherActivitiesLanding,
+        string.IsNullOrWhiteSpace(marketingWhatsAppPhone) ? null : marketingWhatsAppPhone.Trim()
     );
     return Results.Ok(dto);
 }).AllowAnonymous();

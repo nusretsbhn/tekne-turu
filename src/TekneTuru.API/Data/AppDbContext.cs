@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
     public DbSet<ThanksSurveyResponse> ThanksSurveyResponses => Set<ThanksSurveyResponse>();
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<Agency> Agencies => Set<Agency>();
+    public DbSet<OtherActivity> OtherActivities => Set<OtherActivity>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
