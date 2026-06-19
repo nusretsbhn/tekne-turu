@@ -29,11 +29,21 @@ const COPY = {
   },
 } as const
 
-function buildWhatsAppHref(phone: string | null | undefined, activityName: string): string {
+function buildWhatsAppHref(phone: string | null | undefined, activityName: string, lang: Lang): string {
   const digits = (phone ?? '905354033869').replace(/\D/g, '')
   const e164 = digits.startsWith('90') ? digits : `90${digits.replace(/^0/, '')}`
-  const text = encodeURIComponent(`Merhaba, "${activityName}" aktivitesi hakkında bilgi almak istiyorum.`)
-  return `https://wa.me/${e164}?text=${text}`
+  const message =
+    lang === 'en'
+      ? `I would like detailed information about ${activityName}!`
+      : `${activityName} hakkında detaylı bilgi almak istiyorum!`
+  return `https://wa.me/${e164}?text=${encodeURIComponent(message)}`
+}
+
+function excerpt(text: string | null | undefined, max = 100): string | null {
+  if (!text?.trim()) return null
+  const normalized = text.trim().replace(/\s+/g, ' ')
+  if (normalized.length <= max) return normalized
+  return `${normalized.slice(0, max).trimEnd()}…`
 }
 
 function isYoutubeUrl(url: string): boolean {
@@ -73,6 +83,7 @@ export function MarketingOtherActivities({ activities, whatsappPhone, lang, reso
         <div style={styles.grid}>
           {activities.map((item) => {
             const cover = resolveUrl(item.coverUrl)
+            const shortDesc = excerpt(item.description)
             return (
               <button key={item.id} type="button" style={styles.card} onClick={() => open(item)}>
                 <div style={styles.cardImageWrap}>
@@ -85,7 +96,7 @@ export function MarketingOtherActivities({ activities, whatsappPhone, lang, reso
                 </div>
                 <div style={styles.cardBody}>
                   <h3 style={styles.cardTitle}>{item.name}</h3>
-                  {item.duration && <p style={styles.cardMeta}>{item.duration}</p>}
+                  {shortDesc && <p style={styles.cardDesc}>{shortDesc}</p>}
                   <span style={styles.cardCta}>{t.viewDetails}</span>
                 </div>
               </button>
@@ -176,7 +187,7 @@ export function MarketingOtherActivities({ activities, whatsappPhone, lang, reso
             <div style={styles.footer}>
               {selected.hidePrice ? (
                 <a
-                  href={buildWhatsAppHref(whatsappPhone, selected.name)}
+                  href={buildWhatsAppHref(whatsappPhone, selected.name, lang)}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={styles.whatsappBtn}
@@ -232,7 +243,16 @@ const styles: Record<string, CSSProperties> = {
   },
   cardBody: { padding: '16px 18px 18px' },
   cardTitle: { margin: 0, fontSize: 18, fontWeight: 700, color: '#0f172a' },
-  cardMeta: { margin: '6px 0 0', fontSize: 14, color: '#64748b' },
+  cardDesc: {
+    margin: '8px 0 0',
+    fontSize: 14,
+    color: '#64748b',
+    lineHeight: 1.45,
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+  },
   cardCta: { display: 'inline-block', marginTop: 12, fontSize: 14, fontWeight: 600, color: '#f97316' },
   backdrop: {
     position: 'fixed',
